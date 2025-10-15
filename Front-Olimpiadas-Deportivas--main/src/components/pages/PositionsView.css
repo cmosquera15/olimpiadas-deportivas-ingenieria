@@ -1,0 +1,192 @@
+.positions-view {
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 80px);
+}
+
+.positions-card {
+  background-color: white;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.positions-card h2 {
+  color: #333;
+  margin-bottom: 24px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.positions-table-container {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.positions-table {
+  margin-bottom: 0;
+}
+
+.positions-table th {
+  background-color: #0a0a0a;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 16px 12px;
+}
+
+.positions-table td {
+  text-align: center;
+  padding: 16px 12px;
+  vertical-align: middle;
+}
+
+.position-col {
+  width: 60px;
+}
+
+.team-col {
+  width: auto;
+  min-width: 200px;
+  text-align: left !important;
+}
+
+.points-col,
+.games-col,
+.won-col,
+.lost-col,
+.tied-col {
+  width: 100px;
+}
+
+.position-row.top-position {
+  background-color: #f8f9fa;
+}
+
+.position-row:hover {
+  background-color: #e9ecef;
+}
+
+.position-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: bold;
+  color: white;
+  background-color: #6c757d;
+}
+
+.position-badge.first {
+  background-color: #ffd700;
+  color: #333;
+}
+
+.position-badge.second {
+  background-color: #c0c0c0;
+  color: #333;
+}
+
+.position-badge.third {
+  background-color: #cd7f32;
+  color: white;
+}
+
+.team-name {
+  font-weight: 600;
+  color: #333;
+  text-align: left !important;
+}
+
+.points-value {
+  font-size: 18px;
+  color: #0a0a0a;
+}
+
+.won-value {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.lost-value {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.tied-value {
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.positions-summary {
+  border-top: 2px solid #e9ecef;
+  padding-top: 20px;
+}
+
+.summary-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0a0a0a;
+}
+
+@media (max-width: 768px) {
+  .positions-card {
+    padding: 20px;
+  }
+
+  .positions-table th,
+  .positions-table td {
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+
+  .team-col {
+    min-width: 150px;
+  }
+
+  .summary-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .positions-table-container {
+    overflow-x: scroll;
+  }
+}
+
+@media (max-width: 480px) {
+  .positions-table th,
+  .positions-table td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  .team-col {
+    min-width: 120px;
+  }
+
+  .position-badge {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+}

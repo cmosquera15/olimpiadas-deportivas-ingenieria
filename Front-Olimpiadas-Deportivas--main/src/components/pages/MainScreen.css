@@ -1,0 +1,26 @@
+.main-screen {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.back-button-container {
+  padding: 20px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.main-content {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.welcome-message h2 {
+  color: #333;
+  margin-bottom: 16px;
+  font-size: 28px;
+}
+
+.welcome-message p {
+  color: #666;
+  font-size: 16px;
+}
