@@ -37,6 +37,17 @@ public class Usuario {
     public Usuario() {
     }
 
+    public Usuario(Integer id, String nombre, String documento, String correo,
+            ProgramaAcademico programaAcademico, EntidadPromotoraSalud entidadPromotoraSalud, Rol rol) {
+        this.id = id;
+        this.nombre = nombre;
+        this.documento = documento;
+        this.correo = correo;
+        this.programaAcademico = programaAcademico;
+        this.entidadPromotoraSalud = entidadPromotoraSalud;
+        this.rol = rol;
+    }
+
     public Integer getId() {
         return id;
     }

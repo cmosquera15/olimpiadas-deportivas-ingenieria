@@ -4,4 +4,6 @@ import java.util.List;
 
 public record ResultadoRequest(
     List<EquipoResultado> resultados
-) {}
+) {
+    
+}

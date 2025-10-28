@@ -11,6 +11,7 @@ public record EquipoDTO(
     String torneo,
     char grupo
 ) {
+    @SuppressWarnings("null")
     public EquipoDTO(Equipo e) {
         this(
             e.getNombre(),

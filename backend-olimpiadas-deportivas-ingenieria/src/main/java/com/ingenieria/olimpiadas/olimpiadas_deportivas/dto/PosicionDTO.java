@@ -7,4 +7,6 @@ public record PosicionDTO(
     Integer perdidos,
     Integer empatados,
     Integer puntos
-) {}
+) {
+    
+}

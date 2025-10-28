@@ -4,4 +4,6 @@ public record EquipoResultado(
     String nombreEquipo,
     Integer puntos,
     String resultado
-) {}
+) {
+    
+}
