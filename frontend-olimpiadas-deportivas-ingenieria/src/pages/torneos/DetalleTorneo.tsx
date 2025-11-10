@@ -1,0 +1,183 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AppLayout } from '@/components/Layout/AppLayout';
+import { torneosService } from '@/services/torneos.service';
+import { useGrupos, useJornadas } from '@/hooks/useCatalogos';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Guard } from '@/components/ui/Guard';
+import { toast } from 'sonner';
+import { ArrowLeft, Trophy, Calendar, Users, Zap, ExternalLink } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+export default function DetalleTorneo() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: torneo, isLoading } = useQuery({
+    queryKey: ['torneo', id],
+    queryFn: () => torneosService.getTorneo(Number(id)),
+    enabled: !!id,
+  });
+
+  const { data: grupos } = useGrupos(torneo?.id);
+  const { data: jornadas } = useJornadas(torneo?.id);
+
+  const generarLlavesMutation = useMutation({
+    mutationFn: () => torneosService.generarLlaves(Number(id)),
+    onSuccess: () => {
+      toast.success('Llaves generadas exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['partidos'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al generar llaves');
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!torneo) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Torneo no encontrado</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div>
+          <Button variant="ghost" onClick={() => navigate('/torneos')} className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver a Torneos
+          </Button>
+
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{torneo.nombre}</h1>
+              <p className="text-muted-foreground">
+                {torneo.deporte.nombre} • {torneo.anio}
+              </p>
+            </div>
+            {torneo.activo ? (
+              <Badge className="bg-success">Activo</Badge>
+            ) : (
+              <Badge variant="secondary">Inactivo</Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <Trophy className="h-8 w-8 text-primary" />
+              <CardTitle>Deporte</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{torneo.deporte.nombre}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Users className="h-8 w-8 text-secondary" />
+              <CardTitle>Grupos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{grupos?.length || 0}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Calendar className="h-8 w-8 text-contrast" />
+              <CardTitle>Jornadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{jornadas?.length || 0}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {torneo.reglamentoUrl && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Reglamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild>
+                <a href={torneo.reglamentoUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Ver Reglamento Oficial
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {grupos && grupos.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Grupos del Torneo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {grupos.map((grupo) => (
+                  <div key={grupo.id} className="rounded-lg border p-3">
+                    <p className="font-medium">{grupo.nombre}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Guard
+          permiso="Partidos_Crear"
+          tooltipMessage="Solo usuarios con permisos pueden generar llaves"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-accent" />
+                Generar Llaves
+              </CardTitle>
+              <CardDescription>
+                Genera automáticamente los partidos del torneo según el reglamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => generarLlavesMutation.mutate()}
+                disabled={generarLlavesMutation.isPending || !torneo.activo}
+              >
+                {generarLlavesMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Generar Llaves del Torneo
+              </Button>
+              {!torneo.activo && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  El torneo debe estar activo para generar llaves
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Guard>
+      </div>
+    </AppLayout>
+  );
+}

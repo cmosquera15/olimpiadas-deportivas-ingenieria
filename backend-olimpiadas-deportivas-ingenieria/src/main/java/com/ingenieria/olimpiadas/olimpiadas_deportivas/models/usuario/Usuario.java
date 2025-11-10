@@ -1,108 +1,47 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.models.usuario;
 
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.EntidadPromotoraSalud;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.Genero;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.ProgramaAcademico;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.TipoVinculo;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
-@Entity
-@Table(name = "tbl_usuario")
+@Entity @Table(schema="olimpiadas_ingenieria", name="tbl_usuario")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable=false, length=255)
     private String nombre;
+
+    @Column(unique=true, length=255) // puede ser NULL hasta completar perfil
     private String documento;
+
+    @Column(nullable=false, unique=true, length=255)
     private String correo;
 
-    @ManyToOne
-    @JoinColumn(name = "id_programa_academico")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_programa_academico")
     private ProgramaAcademico programaAcademico;
 
-    @ManyToOne
-    @JoinColumn(name = "id_eps")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_eps")
     private EntidadPromotoraSalud entidadPromotoraSalud;
 
-    @ManyToOne
-    @JoinColumn(name = "id_rol")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_rol", nullable=false)
     private Rol rol;
 
-    public Usuario() {
-    }
+    @Column(name="foto_url")
+    private String fotoUrl;
 
-    public Usuario(Integer id, String nombre, String documento, String correo,
-            ProgramaAcademico programaAcademico, EntidadPromotoraSalud entidadPromotoraSalud, Rol rol) {
-        this.id = id;
-        this.nombre = nombre;
-        this.documento = documento;
-        this.correo = correo;
-        this.programaAcademico = programaAcademico;
-        this.entidadPromotoraSalud = entidadPromotoraSalud;
-        this.rol = rol;
-    }
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_tipo_vinculo")
+    private TipoVinculo tipoVinculo;
 
-    public Integer getId() {
-        return id;
-    }
+    @Builder.Default
+    @Column(nullable=false)
+    private Boolean habilitado = Boolean.TRUE;
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDocumento() {
-        return documento;
-    }
-
-    public void setDocumento(String documento) {
-        this.documento = documento;
-    }
-
-    public String getCorreo() {
-        return correo;
-    }
-
-    public void setCorreo(String correo) {
-        this.correo = correo;
-    }
-
-    public ProgramaAcademico getProgramaAcademico() {
-        return programaAcademico;
-    }
-
-    public void setProgramaAcademico(ProgramaAcademico programaAcademico) {
-        this.programaAcademico = programaAcademico;
-    }
-
-    public EntidadPromotoraSalud getEntidadPromotoraSalud() {
-        return entidadPromotoraSalud;
-    }
-
-    public void setEntidadPromotoraSalud(EntidadPromotoraSalud entidadPromotoraSalud) {
-        this.entidadPromotoraSalud = entidadPromotoraSalud;
-    }
-
-    public Rol getRol() {
-        return rol;
-    }
-
-    public void setRol(Rol rol) {
-        this.rol = rol;
-    }
-
-    
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_genero")
+    private Genero genero;
 }

@@ -1,0 +1,211 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AppLayout } from '@/components/Layout/AppLayout';
+import { partidosService } from '@/services/partidos.service';
+import { formatDateTime } from '@/lib/date';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Guard } from '@/components/ui/Guard';
+import { AsignarEquiposForm } from '@/components/Partidos/AsignarEquiposForm';
+import { MarcadorForm } from '@/components/Partidos/MarcadorForm';
+import { EventosPanel } from '@/components/Partidos/EventosPanel';
+import { Calendar, MapPin, User, ArrowLeft, Users, Trophy, Flag } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+export default function DetallePartido() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data: partido, isLoading, refetch } = useQuery({
+    queryKey: ['partido', id],
+    queryFn: () => partidosService.getPartido(Number(id)),
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!partido) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Partido no encontrado</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const isFinished = partido.puntosEquipo1 !== null && partido.puntosEquipo2 !== null;
+  const hasEquipos = partido.equipo1 && partido.equipo2;
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/partidos')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold tracking-tight">Detalle del Partido</h1>
+            <p className="text-muted-foreground">{partido.torneo.nombre}</p>
+          </div>
+          {isFinished && <Badge variant="secondary">Finalizado</Badge>}
+        </div>
+
+        {/* Información General */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Información General
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Fecha y Hora</p>
+                <p className="font-medium">
+                  {formatDateTime(new Date(partido.fecha + 'T' + partido.hora))}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Lugar</p>
+                <p className="font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {partido.lugar.nombre}
+                </p>
+              </div>
+              {partido.fase && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Fase</p>
+                  <p className="font-medium">{partido.fase.nombre}</p>
+                </div>
+              )}
+              {partido.grupo && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Grupo</p>
+                  <p className="font-medium">{partido.grupo.nombre}</p>
+                </div>
+              )}
+              {partido.jornada && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Jornada</p>
+                  <p className="font-medium">{partido.jornada.nombre}</p>
+                </div>
+              )}
+              {partido.arbitro && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Árbitro</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {partido.arbitro.nombre}
+                  </p>
+                </div>
+              )}
+            </div>
+            {partido.observaciones && (
+              <div>
+                <p className="text-sm text-muted-foreground">Observaciones</p>
+                <p className="font-medium">{partido.observaciones}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Asignar Equipos */}
+        {!hasEquipos && (
+          <Guard permiso="Partidos_Editar">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Asignar Equipos
+                </CardTitle>
+                <CardDescription>
+                  Selecciona los dos equipos que participarán en este partido
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AsignarEquiposForm partidoId={partido.id} torneoId={partido.torneoId} onSuccess={refetch} />
+              </CardContent>
+            </Card>
+          </Guard>
+        )}
+
+        {/* Marcador */}
+        {hasEquipos && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Marcador
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex-1 text-center">
+                    <p className="text-lg font-semibold mb-2">{partido.equipo1!.nombre}</p>
+                    <p className="text-4xl font-bold text-primary">
+                      {partido.puntosEquipo1 ?? '-'}
+                    </p>
+                    {partido.resultadoEquipo1 && (
+                      <Badge variant="outline" className="mt-2">
+                        {partido.resultadoEquipo1.nombre}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="px-8 text-muted-foreground text-2xl">vs</div>
+                  <div className="flex-1 text-center">
+                    <p className="text-lg font-semibold mb-2">{partido.equipo2!.nombre}</p>
+                    <p className="text-4xl font-bold text-primary">
+                      {partido.puntosEquipo2 ?? '-'}
+                    </p>
+                    {partido.resultadoEquipo2 && (
+                      <Badge variant="outline" className="mt-2">
+                        {partido.resultadoEquipo2.nombre}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <Guard permiso="Partidos_Editar">
+                  <Separator className="my-6" />
+                  <MarcadorForm partido={partido} onSuccess={refetch} />
+                </Guard>
+              </CardContent>
+            </Card>
+
+            {/* Eventos */}
+            <Guard permiso="Partidos_Editar">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Flag className="h-5 w-5" />
+                    Eventos del Partido
+                  </CardTitle>
+                  <CardDescription>
+                    Registra eventos como tarjetas, goles, faltas, etc.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <EventosPanel partido={partido} />
+                </CardContent>
+              </Card>
+            </Guard>
+          </>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

@@ -1,53 +1,46 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.controllers;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Torneo;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TorneoDetailDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TorneoListDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.GeneradorLlavesService;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.TorneoService;
-
-import java.util.List;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 @RestController
 @RequestMapping("/api/torneos")
 public class TorneoController {
-    private final TorneoService torneoService;
 
-    public TorneoController(TorneoService torneoService) {
-        this.torneoService = torneoService;
+    private final TorneoService svc;
+    private final GeneradorLlavesService generadorLlavesService;
+
+    public TorneoController(TorneoService svc, GeneradorLlavesService generadorLlavesService) {
+        this.svc = svc;
+        this.generadorLlavesService = generadorLlavesService;
     }
 
     @GetMapping
-    public List<Torneo> obtenerTodosLosTorneosEndpoint() {
-        return torneoService.obtenerTodosLosTorneos();
-    }
-    
-    @PostMapping
-    public Torneo crearTorneo(@RequestBody Torneo torneo) {
-        return torneoService.guardarTorneo(torneo);
-    }
-
-    @PutMapping("/{id}")
-    public Torneo actualizarTorneo(@PathVariable Integer id, @RequestBody Torneo torneo) {
-        return torneoService.actualizarTorneo(id, torneo);
+    public ResponseEntity<Page<TorneoListDTO>> listar(
+            @RequestParam(required = false) Boolean activo,
+            @RequestParam(required = false) Integer deporteId,
+            @RequestParam(required = false) Integer anio,
+            Pageable pageable) {
+        return ResponseEntity.ok(svc.listar(activo, deporteId, anio, pageable));
     }
 
-    @DeleteMapping("/{id}")
-    public void eliminarTorneo(@PathVariable Integer id) {
-        torneoService.eliminarTorneo(id);
+    @GetMapping("/{id}")
+    public ResponseEntity<TorneoDetailDTO> detalle(@PathVariable Integer id) {
+        return ResponseEntity.ok(svc.detalle(id));
     }
 
-    @GetMapping("/nombres")
-    public List<String> obtenerNombresTorneos(@RequestParam(required = false) String deporte, @RequestParam(required = false) String activo) {
-        return torneoService.obtenerNombresTorneos(deporte, activo);
+    @PostMapping("/{id}/generar-llaves")
+    @PreAuthorize("hasAuthority('Partidos_Crear')")
+    public ResponseEntity<Void> generarLlaves(@PathVariable Integer id) {
+        generadorLlavesService.generarLlaves(id);
+        return ResponseEntity.noContent().build();
     }
 }

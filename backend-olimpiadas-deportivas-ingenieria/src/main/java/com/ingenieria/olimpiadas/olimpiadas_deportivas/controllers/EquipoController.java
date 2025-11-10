@@ -1,51 +1,80 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.controllers;
 
-import java.util.List;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.EquipoDTO;
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Equipo;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.equipo.EquipoCreateDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.equipo.EquipoDetailDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.equipo.EquipoListDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.equipo.EquipoUpdateDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.UsuariosPorEquipo;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.EquipoService;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.UsuariosPorEquipoService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/equipos")
 public class EquipoController {
-    private final EquipoService equipoService;
 
-    public EquipoController(EquipoService equipoService) {
+    private final EquipoService equipoService;
+    private final UsuariosPorEquipoService plantillaService;
+
+    public EquipoController(EquipoService equipoService,
+                            UsuariosPorEquipoService plantillaService) {
         this.equipoService = equipoService;
+        this.plantillaService = plantillaService;
     }
 
     @GetMapping
-    public List<EquipoDTO> obtenerTodosLosEquipos() {
-        return equipoService.obtenerTodosLosEquipos();
-    }
-
-    @PostMapping
-    public EquipoDTO crearEquipo(@RequestBody Equipo equipo) {
-        return new EquipoDTO(equipoService.guardarEquipo(equipo));
-    }
-
-    @PutMapping("/{id}")
-    public Equipo actualizarEquipo(@PathVariable Integer id, @RequestBody Equipo equipo) {
-        return equipoService.actualizarEquipo(id, equipo);
-    }
-
-    @DeleteMapping("/{id}")
-    public void eliminarEquipo(@PathVariable Integer id) {
-        equipoService.eliminarEquipo(id);
+    public ResponseEntity<Page<EquipoListDTO>> listar(
+            @RequestParam(required = false) Integer torneoId,
+            @RequestParam(required = false) Integer grupoId,
+            Pageable pageable) {
+        return ResponseEntity.ok(equipoService.listar(torneoId, grupoId, pageable));
     }
 
     @GetMapping("/{id}")
-    public EquipoDTO obtenerEquipoPorId(@PathVariable Integer id) {
-        return equipoService.obtenerEquipoPorId(id);
+    public ResponseEntity<EquipoDetailDTO> detalle(@PathVariable Integer id) {
+        return ResponseEntity.ok(equipoService.detalle(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<EquipoDetailDTO> crear(@Valid @RequestBody EquipoCreateDTO req) {
+        return ResponseEntity.ok(equipoService.crear(req));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EquipoDetailDTO> actualizar(@PathVariable Integer id,
+                                                      @Valid @RequestBody EquipoUpdateDTO req) {
+        return ResponseEntity.ok(equipoService.actualizar(id, req));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        equipoService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{equipoId}/plantilla")
+    public ResponseEntity<List<UsuariosPorEquipo>> listarPlantilla(@PathVariable Integer equipoId,
+                                                                  @RequestParam Integer torneoId) {
+        return ResponseEntity.ok(plantillaService.listarPorEquipo(equipoId, torneoId));
+    }
+
+    @PostMapping("/{equipoId}/plantilla")
+    public ResponseEntity<UsuariosPorEquipo> agregarJugador(@PathVariable Integer equipoId,
+                                                           @RequestParam Integer usuarioId,
+                                                           @RequestParam Integer torneoId) {
+        return ResponseEntity.ok(plantillaService.agregarJugador(equipoId, usuarioId, torneoId));
+    }
+
+    @DeleteMapping("/plantilla/{usuariosPorEquipoId}")
+    public ResponseEntity<Void> removerJugador(@PathVariable Integer usuariosPorEquipoId) {
+        plantillaService.removerJugador(usuariosPorEquipoId);
+        return ResponseEntity.noContent().build();
     }
 }

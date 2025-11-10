@@ -1,45 +1,17 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.models.usuario;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
-@Entity
-@Table(name = "tbl_permiso")
+@Entity @Table(schema="olimpiadas_ingenieria", name="tbl_permiso")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Permiso {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable=false, length=255)
     private String nombre;
+
+    @Column(nullable=false, length=255)
     private String descripcion;
-
-    public Permiso() {
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
 }

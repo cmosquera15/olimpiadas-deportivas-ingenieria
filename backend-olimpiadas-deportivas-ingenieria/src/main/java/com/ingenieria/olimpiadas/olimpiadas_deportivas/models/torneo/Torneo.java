@@ -1,73 +1,26 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo;
 
-import java.time.Year;
-
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.Deporte;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
-@Entity
-@Table(name = "tbl_torneo")
+@Entity @Table(schema="olimpiadas_ingenieria", name="tbl_torneo")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Torneo {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable=false, length=255)
     private String nombre;
-    private Year anio;
 
-    @ManyToOne
-    @JoinColumn(name = "id_deporte")
+    @Column(nullable=false)
+    private Integer anio;
+
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_deporte", nullable=false)
     private Deporte deporte;
 
-    private Boolean activo;
-
-    public Torneo() {
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public Year getAnio() {
-        return anio;
-    }
-
-    public void setAnio(Year anio) {
-        this.anio = anio;
-    }
-
-    public Boolean getActivo() {
-        return activo;
-    }
-
-    public void setActivo(Boolean activo) {
-        this.activo = activo;
-    }
-    
-    public Deporte getDeporte() {
-        return deporte;
-    }
-
-    public void setDeporte(Deporte deporte) {
-        this.deporte = deporte;
-    }
+    @Builder.Default
+    @Column(nullable=false)
+    private Boolean activo = Boolean.TRUE;
 }

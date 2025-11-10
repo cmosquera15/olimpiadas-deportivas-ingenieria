@@ -1,36 +1,19 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Torneo;
 
-@Entity
-@Table(name = "tbl_grupo")
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity @Table(schema="olimpiadas_ingenieria", name="tbl_grupo")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Grupo {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private char nombre;
+    @Column(nullable=false, length=1)
+    private String nombre;
 
-    public Grupo() {
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public char getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(char nombre) {
-        this.nombre = nombre;
-    }
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_torneo", nullable=false)
+    private Torneo torneo;
 }

@@ -1,36 +1,20 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Torneo;
 
-@Entity
-@Table(name = "tbl_jornada")
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity @Table(schema="olimpiadas_ingenieria", name="tbl_jornada",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"numero","id_torneo"}))
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Jornada {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable=false)
     private Integer numero;
 
-    public Jornada() {
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getNumero() {
-        return numero;
-    }
-
-    public void setNumero(Integer numero) {
-        this.numero = numero;
-    }
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_torneo", nullable=false)
+    private Torneo torneo;
 }

@@ -1,45 +1,71 @@
 package com.ingenieria.olimpiadas.olimpiadas_deportivas.controllers;
 
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.PartidoDTO;
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.ResultadoRequest;
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Partido;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.AsignarEquiposRequest;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.MarcadorUpdateDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoCreateDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoDetailDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoListDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoUpdateDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.PartidoService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/partidos")
 public class PartidoController {
-    private final PartidoService partidoService;
 
-    public PartidoController(PartidoService partidoService) {
-        this.partidoService = partidoService;
-    }
+    private final PartidoService svc;
+    public PartidoController(PartidoService svc) { this.svc = svc; }
 
     @GetMapping
-    public List<Partido> obtenerTodosLosPartidosEndpoint() {
-        return partidoService.obtenerTodosLosPartidos();
+    public ResponseEntity<Page<PartidoListDTO>> listar(
+            @RequestParam(required = false) Integer torneoId,
+            @RequestParam(required = false) Integer faseId,
+            @RequestParam(required = false) Integer grupoId,
+            @RequestParam(required = false) Integer arbitroId,
+            Pageable pageable) {
+        return ResponseEntity.ok(svc.listar(torneoId, faseId, grupoId, arbitroId, pageable));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PartidoDetailDTO> detalle(@PathVariable Integer id) {
+        return ResponseEntity.ok(svc.detalle(id));
     }
 
     @PostMapping
-    public Partido crearPartido(@RequestBody Partido partido) {
-        return partidoService.guardarPartido(partido);
+    public ResponseEntity<PartidoDetailDTO> crear(@Valid @RequestBody PartidoCreateDTO req) {
+        return ResponseEntity.ok(svc.crear(req));
     }
 
     @PutMapping("/{id}")
-    public Partido actualizarPartido(@PathVariable Integer id, @RequestBody Partido partido) {
-        return partidoService.actualizarPartido(id, partido);
+    public ResponseEntity<PartidoDetailDTO> actualizar(@PathVariable Integer id,
+                                                       @Valid @RequestBody PartidoUpdateDTO req) {
+        return ResponseEntity.ok(svc.actualizar(id, req));
     }
 
-    @PutMapping("/{id}/resultado")
-    public PartidoDTO actualizarResultado(@PathVariable Integer id, @RequestBody ResultadoRequest request) {
-        return partidoService.actualizarResultado(id, request);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        svc.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/calendario")
-    public List<PartidoDTO> obtenerCalendarioPartidos() {
-        return partidoService.obtenerCalendarioPartidos();
+    @PostMapping("/{id}/asignar-equipos")
+    @PreAuthorize("hasAuthority('Partidos_Editar')")
+    public ResponseEntity<Void> asignarEquipos(@PathVariable Integer id,
+                                               @Valid @RequestBody AsignarEquiposRequest req) {
+        svc.asignarEquipos(id, req.equipoId1(), req.equipoId2());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/marcador")
+    @PreAuthorize("hasAuthority('Partidos_Editar')")
+    public ResponseEntity<PartidoDetailDTO> actualizarMarcador(@PathVariable Integer id,
+                                                               @Valid @RequestBody MarcadorUpdateDTO req) {
+        return ResponseEntity.ok(svc.actualizarMarcador(id, req));
     }
 }
