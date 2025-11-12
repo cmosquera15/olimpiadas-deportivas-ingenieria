@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.*;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -53,6 +53,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // ✅ Preflight CORS: permitir siempre OPTIONS
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Swagger
                 .requestMatchers(
@@ -61,7 +63,7 @@ public class SecurityConfig {
                     "/swagger-ui/**"
                 ).permitAll()
 
-                                // Auth
+                // Auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/google-login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/completar-perfil").authenticated()
 
@@ -101,7 +103,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT,  "/api/partidos/*/marcador").hasAuthority("Partidos_Editar")
                 .requestMatchers(HttpMethod.PUT,  "/api/partidos/**").hasAuthority("Partidos_Editar")
                 .requestMatchers(HttpMethod.DELETE,"/api/partidos/**").hasAuthority("Partidos_Eliminar")
-                                                     
+
                 // Eventos endpoints
                 .requestMatchers(HttpMethod.POST, "/api/eventos/**").hasAuthority("Partidos_Editar")
                 .requestMatchers(HttpMethod.DELETE, "/api/eventos/**").hasAuthority("Partidos_Editar")
