@@ -33,7 +33,7 @@ public class AppProperties {
 
     public static class Jwt {
         private String secretB64;
-        private long expirationMs = 1_800_000L; // 30 min
+        private long expirationMs = 1800000L; // 30 min
         private String issuer = "olimpiadas-ingenieria";
 
         public String getSecretB64() { return secretB64; }
@@ -51,7 +51,8 @@ public class AppProperties {
         private List<String> allowedOrigins = new ArrayList<>(List.of(
             "http://localhost:5173",
             "https://olimpiadas.ingenieria.com",
-            "https://olimpiadasingenieria.com"
+            "https://olimpiadasingenieria.com",
+            "https://www.olimpiadas.ingenieria.com"
         ));
 
         /**
