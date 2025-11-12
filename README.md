@@ -230,4 +230,4 @@ Frontend:
 Proyecto interno académico. Definir licencia explícita si se abre al público (por ejemplo MIT o Apache 2.0).
 
 ---
-**Contacto / Mantenimiento:** Equipo de Desarrollo - Facultad de Ingeniería UdeA.
+**Creado por:** Camilo Andrés Mosquera Vega y Lizbeth Marcela Espinosa Mendoza - Estudiantes UdeA
