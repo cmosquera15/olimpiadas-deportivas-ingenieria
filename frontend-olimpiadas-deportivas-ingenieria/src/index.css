@@ -38,8 +38,9 @@ All colors MUST be HSL.
     --contrast: 288 38% 39%;
     --contrast-foreground: 0 0% 100%;
 
-    --border: 173 20% 90%;
-    --input: 173 20% 90%;
+  /* Darken borders for better contrast in light mode */
+  --border: 173 15% 80%;
+  --input: 173 15% 80%;
     --ring: 173 78% 26%;
 
     --radius: 0.5rem;

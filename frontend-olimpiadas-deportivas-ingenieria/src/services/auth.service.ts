@@ -7,9 +7,8 @@ export const authService = {
     return data;
   },
 
-  completarPerfil: async (request: CompletarPerfilRequest): Promise<AuthDTO> => {
-    const { data } = await axiosInstance.post<AuthDTO>('/auth/completar-perfil', request);
-    return data;
+  completarPerfil: async (request: CompletarPerfilRequest): Promise<void> => {
+    await axiosInstance.post('/auth/completar-perfil', request);
   },
 
   getMe: async (): Promise<AuthDTO> => {

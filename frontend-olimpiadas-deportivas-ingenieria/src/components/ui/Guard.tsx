@@ -19,7 +19,7 @@ export const Guard = ({ children, permiso, rol, fallback, tooltipMessage }: Guar
 
   if (rol && hasAccess) {
     const userRole = getUserRole();
-    hasAccess = userRole === rol;
+    hasAccess = userRole === rol || userRole === 'Administrador';
   }
 
   if (!hasAccess) {

@@ -2,31 +2,34 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { partidosService } from '@/services/partidos.service';
 import { catalogoService } from '@/services/catalogo.service';
-import { Partido } from '@/types';
+import { PartidoDetail } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import axios from 'axios';
+import { hasPermission } from '@/lib/auth';
 
 interface MarcadorFormProps {
-  partido: Partido;
+  partido: PartidoDetail;
   onSuccess?: () => void;
 }
 
 export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
+  const canEdit = hasPermission('Partidos_Editar');
   const [puntosEquipo1, setPuntosEquipo1] = useState<string>(
-    partido.puntosEquipo1?.toString() ?? ''
+   partido.equipoLocalPuntos?.toString() ?? ''
   );
   const [puntosEquipo2, setPuntosEquipo2] = useState<string>(
-    partido.puntosEquipo2?.toString() ?? ''
+   partido.equipoVisitantePuntos?.toString() ?? ''
   );
   const [resultadoEquipo1Id, setResultadoEquipo1Id] = useState<string>(
-    partido.resultadoEquipo1Id?.toString() ?? ''
+   ''
   );
   const [resultadoEquipo2Id, setResultadoEquipo2Id] = useState<string>(
-    partido.resultadoEquipo2Id?.toString() ?? ''
+   ''
   );
 
   const { toast } = useToast();
@@ -36,7 +39,7 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
     queryFn: catalogoService.getResultados,
   });
 
-  const isBasketball = partido.torneo.deporte.nombre.toLowerCase().includes('baloncesto');
+  const isBasketball = partido.torneoNombre.toLowerCase().includes('baloncesto');
 
   // Validación: en baloncesto no puede haber empate a menos que haya W.O.
   const hasWO =
@@ -68,11 +71,19 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
       });
       onSuccess?.();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let description = 'Ocurrió un error al actualizar el marcador';
+
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Error al actualizar marcador',
-        description: error.response?.data?.message || 'Ocurrió un error al actualizar el marcador',
+        description,
       });
     },
   });
@@ -85,13 +96,21 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
     mutation.mutate();
   };
 
+  if (!canEdit) {
+    return (
+      <div className="text-sm text-muted-foreground border rounded-md p-4">
+        No tienes permisos para editar el marcador de este partido.
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
         {/* Equipo 1 */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Puntos {partido.equipo1?.nombre}</label>
+              <label className="text-sm font-medium">Puntos {partido.equipoLocalNombre}</label>
             <Input
               type="number"
               min="0"
@@ -102,12 +121,12 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Resultado</label>
-            <Select value={resultadoEquipo1Id} onValueChange={setResultadoEquipo1Id}>
+            <Select value={resultadoEquipo1Id || 'none'} onValueChange={(val) => setResultadoEquipo1Id(val === 'none' ? '' : val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sin resultado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin resultado</SelectItem>
+                <SelectItem value="none">Sin resultado</SelectItem>
                 {resultados?.map((resultado) => (
                   <SelectItem key={resultado.id} value={resultado.id.toString()}>
                     {resultado.nombre}
@@ -121,7 +140,7 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
         {/* Equipo 2 */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Puntos {partido.equipo2?.nombre}</label>
+              <label className="text-sm font-medium">Puntos {partido.equipoVisitanteNombre}</label>
             <Input
               type="number"
               min="0"
@@ -132,12 +151,12 @@ export function MarcadorForm({ partido, onSuccess }: MarcadorFormProps) {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Resultado</label>
-            <Select value={resultadoEquipo2Id} onValueChange={setResultadoEquipo2Id}>
+            <Select value={resultadoEquipo2Id || 'none'} onValueChange={(val) => setResultadoEquipo2Id(val === 'none' ? '' : val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sin resultado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin resultado</SelectItem>
+                <SelectItem value="none">Sin resultado</SelectItem>
                 {resultados?.map((resultado) => (
                   <SelectItem key={resultado.id} value={resultado.id.toString()}>
                     {resultado.nombre}

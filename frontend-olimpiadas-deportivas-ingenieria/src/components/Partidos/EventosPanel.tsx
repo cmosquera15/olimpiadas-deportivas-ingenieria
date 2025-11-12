@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventosService } from '@/services/eventos.service';
 import { catalogoService } from '@/services/catalogo.service';
+import { torneosService } from '@/services/torneos.service';
 import { equiposService } from '@/services/equipos.service';
-import { Partido } from '@/types';
+import { PartidoDetail } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,15 +24,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Plus } from 'lucide-react';
+import axios from 'axios';
+import { hasPermission } from '@/lib/auth';
 
 interface EventosPanelProps {
-  partido: Partido;
+  partido: PartidoDetail;
 }
 
 export function EventosPanel({ partido }: EventosPanelProps) {
-  const [tipoEventoId, setTipoEventoId] = useState<string>('');
-  const [usuarioId, setUsuarioId] = useState<string>('');
-  const [minuto, setMinuto] = useState<string>('');
+  const canEdit = hasPermission('Partidos_Editar');
+  const [tipoEventoId, setTipoEventoId] = useState<string | undefined>(undefined);
+  const [usuarioId, setUsuarioId] = useState<string | undefined>(undefined);
   const [observaciones, setObservaciones] = useState<string>('');
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<'1' | '2'>('1');
 
@@ -43,17 +46,44 @@ export function EventosPanel({ partido }: EventosPanelProps) {
     queryFn: () => eventosService.getEventos(partido.id),
   });
 
-  const { data: tiposEvento } = useQuery({
-    queryKey: ['tipos-evento', partido.torneo.deporte.id],
-    queryFn: () => catalogoService.getTiposEvento(partido.torneo.deporte.id),
+  // Load torneo detail to know its deporte and then load tipos de evento
+  // Fallback for any legacy snake_case still lingering in cached objects (type guard)
+  const partidoTorneoId: number | undefined =
+    typeof (partido as { idTorneo?: number }).idTorneo === 'number'
+      ? (partido as { idTorneo?: number }).idTorneo
+      : (partido as { id_torneo?: number }).id_torneo;
+
+  const { data: torneo, isLoading: loadingTorneo } = useQuery({
+    queryKey: ['torneo-detalle', partidoTorneoId],
+    queryFn: () => torneosService.getTorneo(partidoTorneoId),
+    enabled: !!partidoTorneoId,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const equipoIdActual = equipoSeleccionado === '1' ? partido.equipo1?.id : partido.equipo2?.id;
+  const { data: tiposEvento, isLoading: loadingTiposEvento } = useQuery({
+    queryKey: ['tipos-evento', torneo?.idDeporte],
+    queryFn: () => catalogoService.getTiposEvento(torneo!.idDeporte),
+    enabled: !!torneo?.idDeporte,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  console.log('🔍 EventosPanel debug:', {
+    partidoIdTorneo: partidoTorneoId,
+    torneo,
+    loadingTorneo,
+    idDeporte: torneo?.idDeporte,
+    tiposEvento,
+    loadingTiposEvento,
+    tiposEventoCount: tiposEvento?.length
+  });
+
+  const equipoIdActual = equipoSeleccionado === '1' ? partido.equipoLocalId : partido.equipoVisitanteId;
 
   const { data: plantilla } = useQuery({
-    queryKey: ['plantilla', equipoIdActual, partido.torneoId],
-    queryFn: () => equiposService.getPlantilla(equipoIdActual!, partido.torneoId),
-    enabled: !!equipoIdActual,
+    queryKey: ['plantilla', equipoIdActual, partidoTorneoId],
+    queryFn: () => equiposService.getPlantilla(equipoIdActual!, partidoTorneoId),
+    enabled: !!equipoIdActual && !!partidoTorneoId,
+    staleTime: 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -64,16 +94,23 @@ export function EventosPanel({ partido }: EventosPanelProps) {
         description: 'El evento se ha registrado correctamente',
       });
       queryClient.invalidateQueries({ queryKey: ['eventos', partido.id] });
-      setTipoEventoId('');
-      setUsuarioId('');
-      setMinuto('');
+      setTipoEventoId(undefined);
+      setUsuarioId(undefined);
       setObservaciones('');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let description = 'Ocurrió un error al registrar el evento';
+
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Error al registrar evento',
-        description: error.response?.data?.message || 'Ocurrió un error al registrar el evento',
+        description,
       });
     },
   });
@@ -87,11 +124,19 @@ export function EventosPanel({ partido }: EventosPanelProps) {
       });
       queryClient.invalidateQueries({ queryKey: ['eventos', partido.id] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let description = 'Ocurrió un error al eliminar el evento';
+
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Error al eliminar evento',
-        description: error.response?.data?.message || 'Ocurrió un error al eliminar el evento',
+        description,
       });
     },
   });
@@ -111,7 +156,6 @@ export function EventosPanel({ partido }: EventosPanelProps) {
       partidoId: partido.id,
       tipoEventoId: Number(tipoEventoId),
       usuarioId: Number(usuarioId),
-      minuto: minuto ? Number(minuto) : undefined,
       observaciones: observaciones || undefined,
     });
   };
@@ -137,9 +181,6 @@ export function EventosPanel({ partido }: EventosPanelProps) {
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{evento.tipoEvento.nombre}</Badge>
-                  {evento.minuto && (
-                    <span className="text-sm text-muted-foreground">{evento.minuto}'</span>
-                  )}
                   <span className="text-sm font-medium">{evento.usuario.nombre}</span>
                 </div>
                 {evento.observaciones && (
@@ -179,11 +220,16 @@ export function EventosPanel({ partido }: EventosPanelProps) {
         )}
       </div>
 
-      <Separator />
+  <Separator />
 
       {/* Formulario para crear evento */}
       <div>
         <h3 className="text-lg font-semibold mb-4">Registrar Evento</h3>
+        {!canEdit ? (
+          <div className="text-sm text-muted-foreground border rounded-md p-4">
+            No tienes permisos para registrar eventos en este partido.
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -196,26 +242,37 @@ export function EventosPanel({ partido }: EventosPanelProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">{partido.equipo1?.nombre}</SelectItem>
-                  <SelectItem value="2">{partido.equipo2?.nombre}</SelectItem>
+                    <SelectItem value="1">{partido.equipoLocalNombre}</SelectItem>
+                    <SelectItem value="2">{partido.equipoVisitanteNombre}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de Evento</label>
-              <Select value={tipoEventoId} onValueChange={setTipoEventoId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar evento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposEvento?.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                      {tipo.nombre} ({tipo.puntosNegativos} pts. neg.)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingTiposEvento ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando tipos de evento...
+                </div>
+              ) : !tiposEvento || tiposEvento.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No hay tipos de evento disponibles para este deporte
+                </div>
+              ) : (
+                <Select value={tipoEventoId} onValueChange={setTipoEventoId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar evento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposEvento.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                        {tipo.nombre} ({tipo.puntosNegativos} pts. neg.)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -234,16 +291,6 @@ export function EventosPanel({ partido }: EventosPanelProps) {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Minuto (opcional)</label>
-              <Input
-                type="number"
-                min="0"
-                value={minuto}
-                onChange={(e) => setMinuto(e.target.value)}
-                placeholder="0"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -265,6 +312,7 @@ export function EventosPanel({ partido }: EventosPanelProps) {
             Registrar Evento
           </Button>
         </form>
+        )}
       </div>
     </div>
   );

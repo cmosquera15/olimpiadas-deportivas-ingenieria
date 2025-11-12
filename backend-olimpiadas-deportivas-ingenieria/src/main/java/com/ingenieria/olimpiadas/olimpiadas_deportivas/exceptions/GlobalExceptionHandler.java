@@ -89,6 +89,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+        System.out.println("🔍 AccessDeniedException: " + ex.getMessage());
+        System.out.println("🔍 Request URI: " + req.getRequestURI());
+        System.out.println("🔍 Method: " + req.getMethod());
+        ex.printStackTrace();
         ApiError body = new ApiError(
                 req.getRequestURI(),
                 HttpStatus.FORBIDDEN.value(),
@@ -113,6 +117,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest req) {
+        System.out.println("🔍 Exception caught: " + ex.getClass().getName() + " - " + ex.getMessage());
+        ex.printStackTrace();
         ApiError body = new ApiError(
                 req.getRequestURI(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

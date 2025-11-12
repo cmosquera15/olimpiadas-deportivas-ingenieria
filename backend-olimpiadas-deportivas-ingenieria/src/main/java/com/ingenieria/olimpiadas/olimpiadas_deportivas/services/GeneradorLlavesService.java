@@ -61,6 +61,22 @@ public class GeneradorLlavesService {
         Torneo t = torneoRepo.findById(torneoId)
                 .orElseThrow(() -> new NotFoundException("Torneo no encontrado"));
 
+        // Verificar que todos los partidos de fase de grupos estén finalizados
+        List<Partido> partidosGrupos = partidoRepo.findByTorneoIdAndFaseNombre(torneoId, "Fase de Grupos");
+        if (partidosGrupos.isEmpty()) {
+            throw new BadRequestException("No hay partidos de fase de grupos registrados");
+        }
+
+        boolean hayPendientes = partidosGrupos.stream()
+                .anyMatch(p -> {
+                    List<EquiposPorPartido> epps = eppRepo.findByPartidoId(p.getId());
+                    return epps.stream().anyMatch(epp -> epp.getResultado() == null);
+                });
+
+        if (hayPendientes) {
+            throw new BadRequestException("No se pueden generar llaves: hay partidos de fase de grupos sin resultado");
+        }
+
         String dep = t.getDeporte().getNombre().toUpperCase();
 
         if (dep.contains("FUTBOL") || dep.contains("FÚTBOL")) {

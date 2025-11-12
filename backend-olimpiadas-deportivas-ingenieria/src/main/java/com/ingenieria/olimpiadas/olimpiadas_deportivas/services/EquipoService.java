@@ -17,9 +17,14 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.usuario.Usuario;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.catalogo.*;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.torneo.*;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.usuario.UsuarioRepository;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.text.Normalizer;
 
 @Service
 public class EquipoService {
+    private static final Logger log = LoggerFactory.getLogger(EquipoService.class);
 
     private final EquipoRepository equipoRepository;
     private final TorneoRepository torneoRepository;
@@ -78,6 +83,45 @@ public class EquipoService {
         if (!grupo.getTorneo().getId().equals(torneo.getId())) {
             throw new BadRequestException("El grupo no pertenece al torneo");
         }
+        String nombreOriginal = req.getNombre();
+        log.info("[EQUIPO_CREAR] Intento creación equipo. torneoId={}, grupoId={}, nombreOriginal='{}'", torneo.getId(), grupo.getId(), nombreOriginal);
+
+        if (nombreOriginal == null) {
+            log.warn("[EQUIPO_CREAR] Nombre nulo");
+            throw new BadRequestException("El nombre del equipo es obligatorio");
+        }
+        // Limpia espacios múltiples, conserva acentos para almacenamiento
+        String nombreTrimmado = nombreOriginal.replaceAll("\\s+", " ").trim();
+        if (nombreTrimmado.isEmpty()) {
+            log.warn("[EQUIPO_CREAR] Nombre vacío tras trim. original='{}'", nombreOriginal);
+            throw new BadRequestException("El nombre del equipo es obligatorio");
+        }
+
+        // Versión para comparación (sin acentos, lowercase, espacios colapsados)
+        String claveComparacion = Normalizer.normalize(nombreTrimmado, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+
+        List<Equipo> existentesTorneo = equipoRepository.findByTorneoIdOrderByNombreAsc(torneo.getId());
+        List<String> clavesExistentes = existentesTorneo.stream()
+                .map(Equipo::getNombre)
+                .map(n -> Normalizer.normalize(n.replaceAll("\\s+", " ").trim(), Normalizer.Form.NFD)
+                        .replaceAll("\\p{M}", "")
+                        .toLowerCase())
+                .toList();
+        log.info("[EQUIPO_CREAR] Claves existentes torneo {} => {}", torneo.getId(), clavesExistentes);
+        boolean duplicadoTorneo = clavesExistentes.contains(claveComparacion);
+        if (duplicadoTorneo) {
+            throw new BadRequestException("Duplicado: '" + nombreTrimmado + "' torneo=" + torneo.getId());
+        }
+
+        // Chequeo global opcional (por si hay constraint solo por nombre global)
+        boolean duplicadoGlobal = equipoRepository.existsByNombreIgnoreCase(nombreTrimmado);
+        log.info("[EQUIPO_CREAR] Chequeo global existsByNombreIgnoreCase='{}' => {}", nombreTrimmado, duplicadoGlobal);
+        if (duplicadoGlobal) {
+            log.warn("[EQUIPO_CREAR] Nombre ya existe globalmente (otro torneo). nombre='{}'", nombreTrimmado);
+            // Solo informativo, permitimos si constraint lo deja; si BD lanza violación se capturará abajo.
+        }
 
         var p1 = programaRepository.findById(req.getId_programa_academico_1())
                 .orElseThrow(() -> new NotFoundException("Programa 1 no encontrado"));
@@ -91,15 +135,27 @@ public class EquipoService {
                     .orElseThrow(() -> new NotFoundException("Capitán no encontrado"));
         }
 
-        Equipo e = new Equipo();
-        e.setNombre(req.getNombre());
+    Equipo e = new Equipo();
+    e.setNombre(nombreTrimmado); // almacenamos versión legible (con acentos)
         e.setTorneo(torneo);
         e.setGrupo(grupo);
         e.setProgramaAcademico1(p1);
         e.setProgramaAcademico2(p2);
         e.setCapitan(cap);
 
-        e = equipoRepository.save(e);
+        try {
+            e = equipoRepository.save(e);
+            log.info("[EQUIPO_CREAR] Equipo creado id={} nombre='{}' torneoId={}", e.getId(), e.getNombre(), torneo.getId());
+        } catch (DataIntegrityViolationException ex) {
+            String causa = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+            log.error("[EQUIPO_CREAR] DataIntegrityViolation al guardar nombre='{}' torneoId={} causa={}", nombreTrimmado, torneo.getId(), causa);
+            // Si la violación es por PK (secuencia desfasada), indicamos error interno claro
+            if (causa != null && causa.contains("tbl_equipo_pkey")) {
+                throw new RuntimeException("Error interno: secuencia de IDs desfasada en equipos. Contacta al administrador.");
+            }
+            // Cualquier otro constraint (por ejemplo, único por nombre si se define en BD)
+            throw new BadRequestException("Duplicado (constraint BD): '" + nombreTrimmado + "' torneo=" + torneo.getId());
+        }
         return mapper.toDetailDTO(e);
     }
 

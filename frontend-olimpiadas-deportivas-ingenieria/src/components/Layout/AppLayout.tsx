@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, Trophy } from 'lucide-react';
+import { Menu, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { AppSidebar } from './AppSidebar';
@@ -14,29 +14,73 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User } from 'lucide-react';
 
 interface AppLayoutProps {
-  children: ReactNode;
+  children: JSX.Element | JSX.Element[];
 }
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const { user, clearAuth } = useAuth();
   const navigate = useNavigate();
+  const [isDark, setIsDark] = React.useState<boolean>(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  React.useEffect(() => {
+    // Ensure html class matches state
+    const html = document.documentElement;
+    if (isDark) html.classList.add('dark');
+    else html.classList.remove('dark');
+  }, [isDark]);
+
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔍 User data in AppLayout:', {
+        nombre: user.nombre,
+        correo: user.correo,
+        fotoUrl: user.fotoUrl,
+        hasFoto: !!user.fotoUrl,
+        fotoUrlLength: user.fotoUrl?.length,
+        fotoUrlType: typeof user.fotoUrl,
+      });
+      
+      // Test if we can load the image directly
+      if (user.fotoUrl) {
+        const testImg = new Image();
+        testImg.crossOrigin = 'anonymous';
+        testImg.referrerPolicy = 'no-referrer';
+        testImg.onload = () => console.log('✅ Image is accessible:', user.fotoUrl);
+        testImg.onerror = (e) => console.error('❌ Image failed to load:', user.fotoUrl, e);
+        testImg.src = user.fotoUrl;
+      }
+    }
+  }, [user]);
 
   const handleLogout = () => {
     clearAuth();
     navigate('/auth/login');
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (nameOrEmail?: string | null) => {
+    const base = nameOrEmail?.trim();
+    if (!base) return 'U';
+    if (base.includes(' ')) {
+      return base
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return base.slice(0, 2).toUpperCase();
   };
+
+  const displayName = user?.nombre ?? user?.correo ?? 'Usuario';
 
   return (
     <SidebarProvider>
@@ -67,11 +111,35 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              {/* Logo */}
+              {/* Logo swaps based on theme */}
               <Link to="/dashboard" className="flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-primary" />
+                <img
+                  src={isDark ? '/UdeA+simplificado+®-03.png' : '/UdeA+simplificado-01.png'}
+                  alt="Logo Olimpiadas"
+                  className="h-8 w-auto"
+                />
                 <span className="hidden font-semibold sm:inline-block">Olimpiadas Ingeniería</span>
               </Link>
+
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Toggle theme"
+                onClick={() => {
+                  setIsDark((prev) => {
+                    const next = !prev;
+                    localStorage.setItem('theme', next ? 'dark' : 'light');
+                    return next;
+                  });
+                }}
+              >
+                {isDark ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
 
               <div className="flex-1" />
 
@@ -80,9 +148,17 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                      <Avatar className="h-9 w-9">
+                      <Avatar className="h-9 w-9 ring-2 ring-primary ring-offset-2 ring-offset-background">
+                        <AvatarImage 
+                          src={user.fotoUrl || undefined} 
+                          alt={displayName || 'User'}
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onLoad={() => console.log('✅ Avatar image loaded successfully')}
+                          onError={(e) => console.error('❌ Avatar image failed to load:', e)}
+                        />
                         <AvatarFallback className="bg-primary text-primary-foreground">
-                          {getInitials(user.nombre)}
+                          {getInitials(displayName)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -90,11 +166,20 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.nombre}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.rol}</p>
+                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                        {user.correo && (
+                          <p className="text-xs leading-none text-muted-foreground">{user.correo}</p>
+                        )}
+                        {user.rol && (
+                          <p className="text-xs leading-none text-muted-foreground">{user.rol}</p>
+                        )}
                       </div>
                     </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                      <User className="mr-2 h-4 w-4" />
+                      Mi Perfil
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />

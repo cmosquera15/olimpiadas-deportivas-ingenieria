@@ -14,13 +14,9 @@ public class Torneo {
     @Column(nullable=false, length=255)
     private String nombre;
 
-    @Column(nullable=false)
-    private Integer anio;
-
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_deporte", nullable=false)
     private Deporte deporte;
 
-    @Builder.Default
-    @Column(nullable=false)
-    private Boolean activo = Boolean.TRUE;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="id_olimpiada", nullable=false)
+    private Olimpiada olimpiada;
 }

@@ -189,7 +189,8 @@ public class PartidoService {
         }
     }
 
-    public Page<PartidoListDTO> listar(Integer torneoId, Integer faseId, Integer grupoId, Integer arbitroId, Pageable pageable) {
+    public Page<PartidoListViewDTO> listar(Integer torneoId, Integer faseId, Integer grupoId, Integer arbitroId, Pageable pageable) {
+        // 1) Traer base de partidos, ya ordenados
         List<Partido> base;
         if (torneoId != null) {
             base = partidoRepository.findByTorneoOrdered(torneoId);
@@ -198,15 +199,24 @@ public class PartidoService {
             base.sort(Comparator.comparing(Partido::getFecha).thenComparing(Partido::getHora));
         }
 
-        if (faseId != null)   base = base.stream().filter(p -> p.getFase() != null && faseId.equals(p.getFase().getId())).toList();
-        if (grupoId != null)  base = base.stream().filter(p -> p.getGrupo() != null && grupoId.equals(p.getGrupo().getId())).toList();
-        if (arbitroId != null) base = base.stream().filter(p -> p.getArbitro() != null && arbitroId.equals(p.getArbitro().getId())).toList();
+        // 2) Filtros en memoria (podrías llevarlos a queries si prefieres)
+        if (faseId != null)
+            base = base.stream().filter(p -> p.getFase()   != null && faseId.equals(p.getFase().getId())).toList();
+        if (grupoId != null)
+            base = base.stream().filter(p -> p.getGrupo()  != null && grupoId.equals(p.getGrupo().getId())).toList();
+        if (arbitroId != null)
+            base = base.stream().filter(p -> p.getArbitro()!= null && arbitroId.equals(p.getArbitro().getId())).toList();
 
-        List<PartidoListDTO> dtos = base.stream().map(mapper::toListDTO).toList();
+        // 3) Mapear a ListView incluyendo equipos y puntos (si hay EPPs)
+        List<PartidoListViewDTO> dtos = base.stream().map(p -> {
+            List<EquiposPorPartido> epps = eppRepository.findByPartidoIdOrderByIdAsc(p.getId());
+            return mapper.toListView(p, epps);
+        }).toList();
 
+        // 4) Paginación manual sobre la lista ya mapeada
         int start = (int) pageable.getOffset();
         int end   = Math.min(start + pageable.getPageSize(), dtos.size());
-        List<PartidoListDTO> slice = start > end ? List.of() : dtos.subList(start, end);
+        List<PartidoListViewDTO> slice = (start > end) ? List.of() : dtos.subList(start, end);
 
         return new PageImpl<>(slice, pageable, dtos.size());
     }

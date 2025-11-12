@@ -17,13 +17,38 @@ public interface TorneoMapper {
     default TorneoListDTO toListDTO(Torneo t) {
         if (t == null) return null;
         Integer deporteId = t.getDeporte() != null ? t.getDeporte().getId() : null;
-        return new TorneoListDTO(t.getId(), t.getNombre(), t.getAnio(), deporteId, t.getActivo());
+        String  deporteNombre = t.getDeporte() != null ? t.getDeporte().getNombre() : null;
+
+        Integer olimpiadaId = t.getOlimpiada() != null ? t.getOlimpiada().getId() : null;
+        String  olimpiadaNombre = t.getOlimpiada() != null ? t.getOlimpiada().getNombre() : null;
+
+        return new TorneoListDTO(
+            t.getId(),
+            t.getNombre(),
+            deporteId,
+            deporteNombre,
+            olimpiadaId,
+            olimpiadaNombre
+        );
     }
 
     default TorneoDetailDTO toDetailDTO(Torneo t, String reglamentoUrl) {
         if (t == null) return null;
         Integer deporteId = t.getDeporte() != null ? t.getDeporte().getId() : null;
-        return new TorneoDetailDTO(t.getId(), t.getNombre(), t.getAnio(), deporteId, t.getActivo(), reglamentoUrl);
+        String  deporteNombre = t.getDeporte() != null ? t.getDeporte().getNombre() : null;
+
+        Integer olimpiadaId = t.getOlimpiada() != null ? t.getOlimpiada().getId() : null;
+        String  olimpiadaNombre = t.getOlimpiada() != null ? t.getOlimpiada().getNombre() : null;
+
+        return new TorneoDetailDTO(
+            t.getId(),
+            t.getNombre(),
+            deporteId,
+            deporteNombre,
+            olimpiadaId,
+            olimpiadaNombre,
+            reglamentoUrl
+        );
     }
 
     default IdNombreDTO toIdNombre(Torneo t) {

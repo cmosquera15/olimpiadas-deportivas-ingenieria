@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Guard } from '@/components/ui/Guard';
 import { toast } from 'sonner';
-import { ArrowLeft, Trophy, Calendar, Users, Zap, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, Users, Zap, ExternalLink, Award } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function DetalleTorneo() {
   const { id } = useParams<{ id: string }>();
@@ -31,8 +32,16 @@ export default function DetalleTorneo() {
       toast.success('Llaves generadas exitosamente');
       queryClient.invalidateQueries({ queryKey: ['partidos'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al generar llaves');
+    onError: (error: unknown) => {
+      let description = 'Error al generar llaves';
+
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
+      toast.error(description);
     },
   });
 
@@ -69,45 +78,41 @@ export default function DetalleTorneo() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{torneo.nombre}</h1>
               <p className="text-muted-foreground">
-                {torneo.deporte.nombre} • {torneo.anio}
+                {torneo.deporteNombre}
               </p>
             </div>
-            {torneo.activo ? (
-              <Badge className="bg-success">Activo</Badge>
-            ) : (
-              <Badge variant="secondary">Inactivo</Badge>
-            )}
+            <Badge variant="secondary">{torneo.olimpiadaNombre}</Badge>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <Trophy className="h-8 w-8 text-primary" />
-              <CardTitle>Deporte</CardTitle>
+              <Award className="h-8 w-8 text-primary" />
+              <CardTitle>Olimpiada</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{torneo.deporte.nombre}</p>
+              <p className="text-2xl font-bold">{torneo.olimpiadaNombre}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <Users className="h-8 w-8 text-secondary" />
+              <Trophy className="h-8 w-8 text-secondary" />
+              <CardTitle>Deporte</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{torneo.deporteNombre}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Users className="h-8 w-8 text-contrast" />
               <CardTitle>Grupos</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{grupos?.length || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <Calendar className="h-8 w-8 text-contrast" />
-              <CardTitle>Jornadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{jornadas?.length || 0}</p>
             </CardContent>
           </Card>
         </div>
@@ -156,24 +161,19 @@ export default function DetalleTorneo() {
                 Generar Llaves
               </CardTitle>
               <CardDescription>
-                Genera automáticamente los partidos del torneo según el reglamento
+                Genera automáticamente los partidos de eliminación según el reglamento
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button
                 onClick={() => generarLlavesMutation.mutate()}
-                disabled={generarLlavesMutation.isPending || !torneo.activo}
+                disabled={generarLlavesMutation.isPending}
               >
                 {generarLlavesMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Generar Llaves del Torneo
               </Button>
-              {!torneo.activo && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  El torneo debe estar activo para generar llaves
-                </p>
-              )}
             </CardContent>
           </Card>
         </Guard>

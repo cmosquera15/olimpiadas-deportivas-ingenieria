@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { useCatalogos } from '@/hooks/useCatalogos';
 import { useAuth } from '@/store/useAuth';
@@ -11,22 +10,15 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { AuthDTO } from '@/types';
 
 const formSchema = z.object({
   documento: z.string().min(1, 'El documento es requerido'),
@@ -38,22 +30,46 @@ const formSchema = z.object({
 
 export default function CompletarPerfil() {
   const navigate = useNavigate();
-  const { setAuth } = useAuth();
+  const { setAuth, token } = useAuth();
   const { programas, eps, generos, tiposVinculo } = useCatalogos();
+  const qc = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      documento: '',
+      id_programa_academico: undefined as unknown as number,
+      id_eps: undefined as unknown as number,
+      id_genero: undefined as unknown as number,
+      id_tipo_vinculo: undefined as unknown as number,
+    },
   });
 
   const completarPerfilMutation = useMutation({
-    mutationFn: authService.completarPerfil,
-    onSuccess: (data) => {
-      setAuth(data.jwt, data.usuario!);
+    mutationFn: authService.completarPerfil, // void
+    onSuccess: async () => {
+      const me: AuthDTO = await authService.getMe();
+      setAuth(
+        token,
+        {
+          nombre: me.nombre ?? null,
+          correo: me.correo ?? null,
+          fotoUrl: me.fotoUrl ?? null,
+        },
+        true
+      );
       toast.success('Perfil completado exitosamente');
+      qc.invalidateQueries();
       navigate('/dashboard');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al completar el perfil');
+    onError: (error: unknown) => {
+      let description = 'Error al completar el perfil';
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+      toast.error(description);
     },
   });
 
@@ -111,8 +127,8 @@ export default function CompletarPerfil() {
                   <FormItem>
                     <FormLabel>Programa Académico</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value?.toString()}
+                      value={field.value !== undefined ? String(field.value) : undefined}
+                      onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -121,7 +137,7 @@ export default function CompletarPerfil() {
                       </FormControl>
                       <SelectContent>
                         {programas.data?.map((programa) => (
-                          <SelectItem key={programa.id} value={programa.id.toString()}>
+                          <SelectItem key={programa.id} value={String(programa.id)}>
                             {programa.nombre}
                           </SelectItem>
                         ))}
@@ -139,8 +155,8 @@ export default function CompletarPerfil() {
                   <FormItem>
                     <FormLabel>EPS</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value?.toString()}
+                      value={field.value !== undefined ? String(field.value) : undefined}
+                      onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -148,9 +164,9 @@ export default function CompletarPerfil() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {eps.data?.map((epsItem) => (
-                          <SelectItem key={epsItem.id} value={epsItem.id.toString()}>
-                            {epsItem.nombre}
+                        {eps.data?.map((e) => (
+                          <SelectItem key={e.id} value={String(e.id)}>
+                            {e.nombre}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -167,8 +183,8 @@ export default function CompletarPerfil() {
                   <FormItem>
                     <FormLabel>Género</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value?.toString()}
+                      value={field.value !== undefined ? String(field.value) : undefined}
+                      onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -176,9 +192,9 @@ export default function CompletarPerfil() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {generos.data?.map((genero) => (
-                          <SelectItem key={genero.id} value={genero.id.toString()}>
-                            {genero.nombre}
+                        {generos.data?.map((g) => (
+                          <SelectItem key={g.id} value={String(g.id)}>
+                            {g.nombre}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -195,8 +211,8 @@ export default function CompletarPerfil() {
                   <FormItem>
                     <FormLabel>Tipo de Vínculo</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value?.toString()}
+                      value={field.value !== undefined ? String(field.value) : undefined}
+                      onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -204,9 +220,9 @@ export default function CompletarPerfil() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {tiposVinculo.data?.map((tipo) => (
-                          <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                            {tipo.nombre}
+                        {tiposVinculo.data?.map((t) => (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            {t.nombre}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -216,11 +232,7 @@ export default function CompletarPerfil() {
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={completarPerfilMutation.isPending}
-              >
+              <Button type="submit" className="w-full" disabled={completarPerfilMutation.isPending}>
                 {completarPerfilMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

@@ -1,12 +1,21 @@
 import axiosInstance from '@/lib/axios';
-import { Equipo, UsuarioPorEquipo } from '@/types';
+import { Equipo, UsuarioPorEquipo, PageResponse } from '@/types';
+
+export interface EquipoCreateRequest {
+  nombre: string;
+  id_torneo: number;
+  id_grupo: number;
+  id_programa_academico_1: number;
+  id_programa_academico_2?: number;
+  id_usuario_capitan?: number;
+}
 
 export const equiposService = {
   getEquipos: async (torneoId?: number): Promise<Equipo[]> => {
-    const { data } = await axiosInstance.get<Equipo[]>('/equipos', {
+    const { data } = await axiosInstance.get<PageResponse<Equipo>>('/equipos', {
       params: torneoId ? { torneoId } : undefined,
     });
-    return data;
+    return data.content;
   },
 
   getEquipo: async (id: number): Promise<Equipo> => {
@@ -14,7 +23,7 @@ export const equiposService = {
     return data;
   },
 
-  createEquipo: async (request: { nombre: string; torneoId: number }): Promise<Equipo> => {
+  createEquipo: async (request: EquipoCreateRequest): Promise<Equipo> => {
     const { data } = await axiosInstance.post<Equipo>('/equipos', request);
     return data;
   },

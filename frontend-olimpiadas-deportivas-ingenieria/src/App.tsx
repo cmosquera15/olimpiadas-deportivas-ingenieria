@@ -11,11 +11,14 @@ import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/errors/Forbidden";
 import ListadoTorneos from "./pages/torneos/ListadoTorneos";
 import DetalleTorneo from "./pages/torneos/DetalleTorneo";
+import GestionOlimpiadas from "./pages/olimpiadas/GestionOlimpiadas";
 import ListadoPartidos from "./pages/partidos/ListadoPartidos";
 import DetallePartido from "./pages/partidos/DetallePartido";
 import ListadoEquipos from "./pages/equipos/ListadoEquipos";
+import { DetalleEquipo } from "./pages/equipos/DetalleEquipo";
 import TablaPosiciones from "./pages/posiciones/TablaPosiciones";
 import Usuarios from "./pages/admin/Usuarios";
+import PerfilUsuario from "./pages/perfil/PerfilUsuario";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +36,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/auth/login" replace />} />
           <Route path="/auth/login" element={<Login />} />
           <Route
             path="/auth/completar-perfil"
@@ -68,6 +71,14 @@ const App = () => (
             }
           />
           <Route
+            path="/olimpiadas"
+            element={
+              <ProtectedRoute>
+                <GestionOlimpiadas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/partidos"
             element={
               <ProtectedRoute>
@@ -92,10 +103,26 @@ const App = () => (
             }
           />
           <Route
+            path="/equipos/:id"
+            element={
+              <ProtectedRoute>
+                <DetalleEquipo />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/posiciones"
             element={
               <ProtectedRoute>
                 <TablaPosiciones />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/perfil"
+            element={
+              <ProtectedRoute>
+                <PerfilUsuario />
               </ProtectedRoute>
             }
           />

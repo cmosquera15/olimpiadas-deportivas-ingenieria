@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+// __dirname is available in CommonJS, but for ESM in Vite config, use process.cwd() as the project root
+const __dirname = process.cwd();
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {

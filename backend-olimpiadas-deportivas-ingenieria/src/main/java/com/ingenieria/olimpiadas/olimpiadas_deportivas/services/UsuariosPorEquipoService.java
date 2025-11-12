@@ -14,6 +14,12 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.torneo.Equip
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.torneo.TorneoRepository;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.torneo.UsuariosPorEquipoRepository;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.repositories.usuario.UsuarioRepository;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.usuario.CandidatoJugadorDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
 
@@ -124,5 +130,48 @@ public class UsuariosPorEquipoService {
     @Transactional
     public List<UsuariosPorEquipo> listarPorEquipo(Integer equipoId, Integer torneoId) {
         return upeRepo.findByEquipoAndTorneo(equipoId, torneoId);
+    }
+
+    /**
+     * Candidatos para agregar a un equipo:
+     * - Sin texto de búsqueda: limitar a usuarios cuyo programa coincida con alguno de los programas del equipo
+     * - Con texto (q): ampliar a todos los usuarios (por nombre, correo o documento) ignorando programa
+     * Siempre excluir ya inscritos en el equipo/torneo.
+     */
+    public Page<CandidatoJugadorDTO> candidatos(Integer equipoId, Integer torneoId, String q, int page, int size) {
+        Equipo equipo = equipoRepo.findById(equipoId).orElseThrow(() -> new NotFoundException("Equipo no encontrado"));
+        if (!equipo.getTorneo().getId().equals(torneoId)) {
+            throw new BadRequestException("El equipo no pertenece al torneo indicado");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
+
+        Page<Usuario> base;
+        boolean hayTexto = q != null && !q.trim().isEmpty();
+        if (hayTexto) {
+            base = usuarioRepo.searchByTexto(q.trim(), pageable);
+        } else {
+            Integer p1 = equipo.getProgramaAcademico1() != null ? equipo.getProgramaAcademico1().getId() : null;
+            Integer p2 = equipo.getProgramaAcademico2() != null ? equipo.getProgramaAcademico2().getId() : null;
+            // Use p1 for both params if p2 is null to ensure IN clause works
+            base = usuarioRepo.findByProgramas(p1 != null ? p1 : -1, p2 != null ? p2 : p1 != null ? p1 : -1, pageable);
+        }
+
+    var filtered = base.getContent().stream()
+        .filter(u -> u.getRol() != null && "JUGADOR".equalsIgnoreCase(u.getRol().getNombre()))
+        .filter(u -> u.getHabilitado() == null || u.getHabilitado())
+        .filter(u -> !upeRepo.existsByUsuarioIdAndEquipoIdAndTorneoId(u.getId(), equipoId, torneoId))
+        .map(u -> new CandidatoJugadorDTO(
+            u.getId(),
+            u.getNombre(),
+            u.getCorreo(),
+            u.getDocumento(),
+            u.getProgramaAcademico() != null ? u.getProgramaAcademico().getId() : null,
+            u.getProgramaAcademico() != null ? u.getProgramaAcademico().getNombre() : null,
+            u.getGenero() != null ? u.getGenero().getNombre() : null
+        ))
+        .toList();
+
+    return new PageImpl<>(filtered, pageable, base.getTotalElements());
     }
 }

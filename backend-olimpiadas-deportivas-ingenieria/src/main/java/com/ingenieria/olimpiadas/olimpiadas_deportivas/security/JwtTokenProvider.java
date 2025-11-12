@@ -61,8 +61,10 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            System.out.println("🔍 Token validation: SUCCESS");
             return true;
         } catch (Exception ex) {
+            System.out.println("🔍 Token validation: FAILED - " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
             return false;
         }
     }

@@ -6,10 +6,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.common.IdNombreDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TorneoCreateRequest;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TorneoDetailDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TorneoListDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.GeneradorLlavesService;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.TorneoService;
+
+import jakarta.validation.Valid;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/torneos")
@@ -25,16 +34,30 @@ public class TorneoController {
 
     @GetMapping
     public ResponseEntity<Page<TorneoListDTO>> listar(
-            @RequestParam(required = false) Boolean activo,
+            @RequestParam(required = false) Integer olimpiadaId,
             @RequestParam(required = false) Integer deporteId,
-            @RequestParam(required = false) Integer anio,
             Pageable pageable) {
-        return ResponseEntity.ok(svc.listar(activo, deporteId, anio, pageable));
+        return ResponseEntity.ok(svc.listar(olimpiadaId, deporteId, pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TorneoDetailDTO> detalle(@PathVariable Integer id) {
         return ResponseEntity.ok(svc.detalle(id));
+    }
+
+    @GetMapping("/opciones")
+    public ResponseEntity<List<IdNombreDTO>> listarOpciones(
+            @RequestParam(required = false) Integer olimpiadaId,
+            @RequestParam(required = false) Integer deporteId) {
+        return ResponseEntity.ok(svc.listarOpciones(olimpiadaId, deporteId));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('Torneos_Crear')")
+    public ResponseEntity<TorneoDetailDTO> crear(@Valid @RequestBody TorneoCreateRequest req, UriComponentsBuilder uriBuilder) {
+        TorneoDetailDTO dto = svc.crear(req);
+        var location = uriBuilder.path("/api/torneos/{id}").buildAndExpand(dto.id()).toUri();
+        return ResponseEntity.status(HttpStatus.CREATED).location(location).body(dto);
     }
 
     @PostMapping("/{id}/generar-llaves")

@@ -14,6 +14,9 @@ public record PartidoListViewDTO(
         IdNombreDTO grupo,
         IdNombreDTO lugar,
         IdNombreDTO arbitro,
-        Integer puntos_local,
-        Integer puntos_visitante
+        EquipoPartidoResumenDTO equipoLocal,
+        EquipoPartidoResumenDTO equipoVisitante,
+        Integer puntosLocal,
+        Integer puntosVisitante,
+        IdNombreDTO olimpiada
 ) {}

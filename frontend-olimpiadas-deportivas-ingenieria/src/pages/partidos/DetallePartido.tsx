@@ -44,8 +44,8 @@ export default function DetallePartido() {
     );
   }
 
-  const isFinished = partido.puntosEquipo1 !== null && partido.puntosEquipo2 !== null;
-  const hasEquipos = partido.equipo1 && partido.equipo2;
+  const isFinished = partido.equipoLocalPuntos !== null && partido.equipoVisitantePuntos !== null;
+  const hasEquipos = partido.equipoLocalId && partido.equipoVisitanteId;
 
   return (
     <AppLayout>
@@ -57,7 +57,7 @@ export default function DetallePartido() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight">Detalle del Partido</h1>
-            <p className="text-muted-foreground">{partido.torneo.nombre}</p>
+            <p className="text-muted-foreground">{partido.torneoNombre}</p>
           </div>
           {isFinished && <Badge variant="secondary">Finalizado</Badge>}
         </div>
@@ -82,33 +82,33 @@ export default function DetallePartido() {
                 <p className="text-sm text-muted-foreground">Lugar</p>
                 <p className="font-medium flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  {partido.lugar.nombre}
+                  {partido.lugarNombre}
                 </p>
               </div>
-              {partido.fase && (
+              {partido.faseNombre && (
                 <div>
                   <p className="text-sm text-muted-foreground">Fase</p>
-                  <p className="font-medium">{partido.fase.nombre}</p>
+                  <p className="font-medium">{partido.faseNombre}</p>
                 </div>
               )}
-              {partido.grupo && (
+              {partido.grupoNombre && (
                 <div>
                   <p className="text-sm text-muted-foreground">Grupo</p>
-                  <p className="font-medium">{partido.grupo.nombre}</p>
+                  <p className="font-medium">{partido.grupoNombre}</p>
                 </div>
               )}
-              {partido.jornada && (
+              {partido.numeroJornada && (
                 <div>
                   <p className="text-sm text-muted-foreground">Jornada</p>
-                  <p className="font-medium">{partido.jornada.nombre}</p>
+                  <p className="font-medium">Jornada {partido.numeroJornada}</p>
                 </div>
               )}
-              {partido.arbitro && (
+              {partido.arbitroNombre && (
                 <div>
                   <p className="text-sm text-muted-foreground">Árbitro</p>
                   <p className="font-medium flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    {partido.arbitro.nombre}
+                    {partido.arbitroNombre}
                   </p>
                 </div>
               )}
@@ -136,7 +136,7 @@ export default function DetallePartido() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AsignarEquiposForm partidoId={partido.id} torneoId={partido.torneoId} onSuccess={refetch} />
+                <AsignarEquiposForm partidoId={partido.id} torneoId={partido.idTorneo} onSuccess={refetch} />
               </CardContent>
             </Card>
           </Guard>
@@ -155,27 +155,17 @@ export default function DetallePartido() {
               <CardContent>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex-1 text-center">
-                    <p className="text-lg font-semibold mb-2">{partido.equipo1!.nombre}</p>
+                    <p className="text-lg font-semibold mb-2">{partido.equipoLocalNombre}</p>
                     <p className="text-4xl font-bold text-primary">
-                      {partido.puntosEquipo1 ?? '-'}
+                      {partido.equipoLocalPuntos ?? '-'}
                     </p>
-                    {partido.resultadoEquipo1 && (
-                      <Badge variant="outline" className="mt-2">
-                        {partido.resultadoEquipo1.nombre}
-                      </Badge>
-                    )}
                   </div>
                   <div className="px-8 text-muted-foreground text-2xl">vs</div>
                   <div className="flex-1 text-center">
-                    <p className="text-lg font-semibold mb-2">{partido.equipo2!.nombre}</p>
+                    <p className="text-lg font-semibold mb-2">{partido.equipoVisitanteNombre}</p>
                     <p className="text-4xl font-bold text-primary">
-                      {partido.puntosEquipo2 ?? '-'}
+                      {partido.equipoVisitantePuntos ?? '-'}
                     </p>
-                    {partido.resultadoEquipo2 && (
-                      <Badge variant="outline" className="mt-2">
-                        {partido.resultadoEquipo2.nombre}
-                      </Badge>
-                    )}
                   </div>
                 </div>
 

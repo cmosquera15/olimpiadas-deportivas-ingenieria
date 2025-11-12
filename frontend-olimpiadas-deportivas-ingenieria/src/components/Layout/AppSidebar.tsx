@@ -1,4 +1,4 @@
-import { Home, Trophy, Calendar, Users, BarChart3, Shield } from 'lucide-react';
+import { Home, Trophy, Calendar, Users, BarChart3, Shield, Award } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -18,6 +18,13 @@ const menuItems = [
     title: 'Inicio',
     url: '/dashboard',
     icon: Home,
+    roles: ['Administrador', 'Árbitro', 'Jugador'],
+  },
+  {
+    title: 'Olimpiadas',
+    url: '/olimpiadas',
+    icon: Award,
+    // Visible para todos los roles; la UI interna controlará quién puede crear/editar
     roles: ['Administrador', 'Árbitro', 'Jugador'],
   },
   {
@@ -53,10 +60,10 @@ const menuItems = [
 ];
 
 export const AppSidebar = () => {
-  const { state } = useSidebar();
-  const userRole = getUserRole();
+  const state = useSidebar();
+  const userRole = getUserRole() ?? 'Jugador';
 
-  const visibleItems = menuItems.filter((item) => item.roles.includes(userRole || ''));
+  const visibleItems = menuItems.filter((item) => item.roles.includes(userRole));
 
   return (
     <Sidebar collapsible="icon">
@@ -74,7 +81,7 @@ export const AppSidebar = () => {
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                     >
                       <item.icon className="h-4 w-4" />
-                      {state === 'expanded' && <span>{item.title}</span>}
+                      <span className="text-sm font-medium">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

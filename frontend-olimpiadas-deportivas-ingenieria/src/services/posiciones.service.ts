@@ -1,11 +1,14 @@
 import axiosInstance from '@/lib/axios';
-import { Posicion } from '@/types';
+import { TablaPosiciones } from '@/types';
 
 export const posicionesService = {
-  getPosiciones: async (torneoId: number, grupoId?: number): Promise<Posicion[]> => {
-    const { data } = await axiosInstance.get<Posicion[]>('/posiciones', {
+  getTabla: async (torneoId: number, grupoId?: number): Promise<TablaPosiciones> => {
+    const { data } = await axiosInstance.get<TablaPosiciones>('/posiciones', {
       params: { torneoId, grupoId },
     });
+    console.log('🔍 RAW API Response:', data);
+    console.log('🔍 Posiciones array:', data.posiciones);
+    console.log('🔍 First team name:', data.posiciones?.[0]?.equipoNombre);
     return data;
   },
 };

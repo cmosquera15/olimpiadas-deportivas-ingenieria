@@ -78,9 +78,18 @@ export const useGrupos = (torneoId: number | undefined) => {
   });
 };
 
+export const useFases = () => {
+  return useQuery({
+    queryKey: ['fases'],
+    queryFn: catalogoService.getFases,
+    staleTime: Infinity,
+  });
+};
+
 export const useTiposEvento = (deporteId?: number) => {
   return useQuery({
     queryKey: ['tipos-evento', deporteId],
     queryFn: () => catalogoService.getTiposEvento(deporteId),
+    enabled: !!deporteId,
   });
 };

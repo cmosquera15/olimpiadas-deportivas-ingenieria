@@ -17,20 +17,23 @@ public interface EquipoMapper {
 
     default EquipoListDTO toListDTO(Equipo e) {
         if (e == null) return null;
-        Integer idTorneo  = e.getTorneo() != null ? e.getTorneo().getId() : null;
-        Integer idGrupo   = e.getGrupo()  != null ? e.getGrupo().getId()  : null;
-        Integer idProg1   = e.getProgramaAcademico1() != null ? e.getProgramaAcademico1().getId() : null;
-        Integer idProg2   = e.getProgramaAcademico2() != null ? e.getProgramaAcademico2().getId() : null;
-        Integer idCapitan = e.getCapitan() != null ? e.getCapitan().getId() : null;
+        Integer torneoId = e.getTorneo() != null ? e.getTorneo().getId() : null;
+        String torneoNombre = e.getTorneo() != null ? e.getTorneo().getNombre() : null;
+        Integer grupoId = e.getGrupo() != null ? e.getGrupo().getId() : null;
+        Integer prog1Id = e.getProgramaAcademico1() != null ? e.getProgramaAcademico1().getId() : null;
+        Integer prog2Id = e.getProgramaAcademico2() != null ? e.getProgramaAcademico2().getId() : null;
+        Integer capitanId = e.getCapitan() != null ? e.getCapitan().getId() : null;
 
         return new EquipoListDTO(
             e.getId(),
             e.getNombre(),
-            idTorneo,
-            idGrupo,
-            idProg1,
-            idProg2,
-            idCapitan
+            torneoId,
+            torneoNombre,
+            grupoId,
+            prog1Id,
+            prog2Id,
+            capitanId,
+            0 // integrantesCount - TODO: implement actual count
         );
     }
 

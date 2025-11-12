@@ -10,6 +10,10 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Equipo;
 public interface EquipoRepository extends JpaRepository<Equipo, Integer> {
 
     List<Equipo> findByTorneoIdOrderByNombreAsc(Integer torneoId);
+    
+    boolean existsByTorneoIdAndNombreIgnoreCase(Integer torneoId, String nombre);
+
+       boolean existsByNombreIgnoreCase(String nombre);
 
     @Query("""
            select count(e) 

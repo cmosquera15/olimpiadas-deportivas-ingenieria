@@ -6,7 +6,7 @@ import { Trophy, Calendar, Users, BarChart3 } from 'lucide-react';
 import { getUserRole } from '@/lib/auth';
 
 export default function Dashboard() {
-  const role = getUserRole();
+  const role = getUserRole() ?? 'JUGADOR';
 
   const quickLinks = [
     {

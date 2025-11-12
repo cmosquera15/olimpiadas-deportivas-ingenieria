@@ -41,7 +41,7 @@ public class AppProperties {
     }
 
     public static class Cors {
-        private List<String> allowedOrigins = List.of("http://localhost:5173", "https://olimpiadas.ingenieria.com, https://olimpiadasingenieria.com");
+        private List<String> allowedOrigins = List.of("http://localhost:5173", "https://olimpiadas.ingenieria.com", "https://olimpiadasingenieria.com");
         private List<String> allowedMethods = List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS");
         private List<String> allowedHeaders = List.of("Authorization", "Content-Type", "Accept");
         private boolean allowCredentials = true;

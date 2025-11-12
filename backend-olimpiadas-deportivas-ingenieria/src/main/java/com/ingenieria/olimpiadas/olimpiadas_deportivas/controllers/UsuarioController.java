@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.auth.AuthDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.usuario.Usuario;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.usuario.UsuarioUpdateDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.UsuarioService;
 
 @RestController
@@ -25,4 +26,12 @@ public class UsuarioController {
     public ResponseEntity<Usuario> byId(@PathVariable Integer id) {
         return ResponseEntity.ok(usuarioService.getById(id));
     }
+
+    @PatchMapping("/me")
+    public ResponseEntity<Usuario> actualizarPerfilPropio(@RequestHeader("Authorization") String bearer,
+                                                          @RequestBody UsuarioUpdateDTO req) {
+        return ResponseEntity.ok(usuarioService.editarPerfilPropio(bearer, req));
+    }
+
+    // Admin endpoints moved to AdminUsuarioController to expose /api/admin/usuarios
 }

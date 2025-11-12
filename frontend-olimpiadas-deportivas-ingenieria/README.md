@@ -13,6 +13,8 @@ Sistema de gestión integral para las Olimpiadas Deportivas de la Facultad de In
 - **Fair Play** - Seguimiento del juego limpio con cálculo automático
 - **Roles y Permisos** - Sistema de roles (Administrador, Árbitro, Jugador)
 - **Administración de Usuarios** - Gestión de usuarios y permisos (solo Admin)
+- **Edición de Perfil (Self)** - Cada usuario puede actualizar su propio perfil (programa, género, EPS, tipo vínculo, foto)
+- **Edición de Perfil (Admin)** - El Administrador puede editar el perfil de cualquier usuario mediante un diálogo contextual
 
 ## 🛠️ Tecnologías
 
@@ -109,6 +111,33 @@ src/
 - Ver torneos, partidos, equipos y posiciones
 - Consultar información de su equipo
 - Acceso de solo lectura
+
+## ✏️ Edición de Perfiles
+
+### Flujo Usuario (Self)
+El usuario autenticado puede actualizar su información desde la página `Perfil`:
+- Campos soportados: nombre, documento (solo si no existía), programa académico, género, EPS, tipo vínculo, foto.
+- El documento es inmutable una vez establecido para preservar la integridad histórica.
+- Sólo se envían al backend los campos modificados.
+
+### Flujo Administrador
+En `Admin > Usuarios` cada fila incluye el botón "Editar Perfil" que abre un diálogo con campos opcionales:
+- El administrador puede ajustar nombre y los catálogos (programa, género, EPS, tipo vínculo) y establecer foto.
+- El documento solo puede agregarse si el usuario aún no tiene uno (el backend rechaza cambios posteriores).
+- Al guardar: se hace `PUT /admin/usuarios/{id}/perfil` y se invalida la caché de la lista.
+- Si no se modifica un campo, no se envía en el payload.
+
+### Consideraciones
+- Validar siempre que la URL de foto sea accesible (idealmente CDN confiable).
+- Las selecciones "(Sin cambios)" mantienen el valor existente en backend.
+- Errores de validación se muestran como toasts amigables.
+
+## 🗄️ Mantenimiento BD (Administrativo)
+Si se realizan inserciones manuales en tablas con columnas autoincrement, verifique que las secuencias no queden desfasadas. Ejemplo (PostgreSQL):
+```sql
+SELECT setval('equipo_id_seq', (SELECT MAX(id) FROM equipo));
+```
+Mantener las secuencias sincronizadas evita errores de llave primaria duplicada en creación de entidades.
 
 ## 🔐 Flujo de Autenticación
 

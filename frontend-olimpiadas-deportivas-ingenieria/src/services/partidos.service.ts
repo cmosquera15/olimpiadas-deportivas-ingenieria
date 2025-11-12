@@ -1,6 +1,7 @@
 import axiosInstance from '@/lib/axios';
 import {
   Partido,
+  PartidoDetail,
   PartidoCreateRequest,
   AsignarEquiposRequest,
   ActualizarMarcadorRequest,
@@ -15,26 +16,43 @@ interface PartidosFilter extends PageRequest {
   arbitroId?: number;
 }
 
+function buildParams(filters: PartidosFilter = {}) {
+  const params: Record<string, unknown> = {};
+  if (typeof filters.page === 'number') params.page = filters.page;
+  if (typeof filters.size === 'number') params.size = filters.size;
+  if (typeof filters.torneoId === 'number') params.torneoId = filters.torneoId;
+  if (typeof filters.faseId === 'number') params.faseId = filters.faseId;
+  if (typeof filters.grupoId === 'number') params.grupoId = filters.grupoId;
+  if (typeof filters.arbitroId === 'number') params.arbitroId = filters.arbitroId;
+  return params;
+}
+
 export const partidosService = {
   getPartidos: async (filters: PartidosFilter = {}): Promise<PageResponse<Partido>> => {
-    const { data } = await axiosInstance.get<PageResponse<Partido>>('/partidos', {
-      params: filters,
-    });
+    const params = buildParams({ size: 10, ...filters });
+    console.log('📡 API call params:', params);
+    try {
+      const { data } = await axiosInstance.get<PageResponse<Partido>>('/partidos', { params });
+      console.log('📦 API response:', { totalElements: data.totalElements, contentLength: data.content.length, data });
+      return data;
+    } catch (error) {
+      console.error('❌ API error:', error);
+      throw error;
+    }
+  },
+
+  getPartido: async (id: number): Promise<PartidoDetail> => {
+    const { data } = await axiosInstance.get<PartidoDetail>(`/partidos/${id}`);
     return data;
   },
 
-  getPartido: async (id: number): Promise<Partido> => {
-    const { data } = await axiosInstance.get<Partido>(`/partidos/${id}`);
+  createPartido: async (request: PartidoCreateRequest): Promise<PartidoDetail> => {
+    const { data } = await axiosInstance.post<PartidoDetail>('/partidos', request);
     return data;
   },
 
-  createPartido: async (request: PartidoCreateRequest): Promise<Partido> => {
-    const { data } = await axiosInstance.post<Partido>('/partidos', request);
-    return data;
-  },
-
-  updatePartido: async (id: number, request: PartidoCreateRequest): Promise<Partido> => {
-    const { data } = await axiosInstance.put<Partido>(`/partidos/${id}`, request);
+  updatePartido: async (id: number, request: PartidoCreateRequest): Promise<PartidoDetail> => {
+    const { data } = await axiosInstance.put<PartidoDetail>(`/partidos/${id}`, request);
     return data;
   },
 
@@ -42,16 +60,13 @@ export const partidosService = {
     await axiosInstance.delete(`/partidos/${id}`);
   },
 
-  asignarEquipos: async (id: number, request: AsignarEquiposRequest): Promise<Partido> => {
-    const { data } = await axiosInstance.post<Partido>(`/partidos/${id}/asignar-equipos`, request);
+  asignarEquipos: async (id: number, request: AsignarEquiposRequest): Promise<PartidoDetail> => {
+    const { data } = await axiosInstance.post<PartidoDetail>(`/partidos/${id}/asignar-equipos`, request);
     return data;
   },
 
-  actualizarMarcador: async (
-    id: number,
-    request: ActualizarMarcadorRequest
-  ): Promise<Partido> => {
-    const { data } = await axiosInstance.put<Partido>(`/partidos/${id}/marcador`, request);
+  actualizarMarcador: async (id: number, request: ActualizarMarcadorRequest): Promise<PartidoDetail> => {
+    const { data } = await axiosInstance.put<PartidoDetail>(`/partidos/${id}/marcador`, request);
     return data;
   },
 };

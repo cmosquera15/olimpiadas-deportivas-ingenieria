@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 interface AsignarEquiposFormProps {
   partidoId: number;
@@ -14,8 +15,8 @@ interface AsignarEquiposFormProps {
 }
 
 export function AsignarEquiposForm({ partidoId, torneoId, onSuccess }: AsignarEquiposFormProps) {
-  const [equipoId1, setEquipoId1] = useState<string>('');
-  const [equipoId2, setEquipoId2] = useState<string>('');
+  const [equipoId1, setEquipoId1] = useState<string | undefined>(undefined);
+  const [equipoId2, setEquipoId2] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   const { data: equipos, isLoading: loadingEquipos } = useQuery({
@@ -36,11 +37,19 @@ export function AsignarEquiposForm({ partidoId, torneoId, onSuccess }: AsignarEq
       });
       onSuccess?.();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let description = 'Ocurrió un error al asignar los equipos';
+
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Error al asignar equipos',
-        description: error.response?.data?.message || 'Ocurrió un error al asignar los equipos',
+        description,
       });
     },
   });

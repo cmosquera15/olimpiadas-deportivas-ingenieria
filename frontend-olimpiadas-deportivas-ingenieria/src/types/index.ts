@@ -1,8 +1,11 @@
 // Auth types
 export interface AuthDTO {
-  jwt: string;
+  token: string | null;
+  id: number | null;
+  nombre: string | null;
+  correo: string | null;
   completo: boolean;
-  usuario?: Usuario;
+  fotoUrl: string | null;
 }
 
 export interface CompletarPerfilRequest {
@@ -15,12 +18,13 @@ export interface CompletarPerfilRequest {
 
 // Usuario types
 export interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
+  id?: number;
+  nombre: string | null;
+  correo: string | null;
+  fotoUrl?: string | null;
   documento?: string;
   rol: string;
-  habilitado: boolean;
+  habilitado?: boolean;
   completo: boolean;
   genero?: Genero;
   eps?: EPS;
@@ -91,24 +95,79 @@ export interface TipoEvento {
   puntosNegativos: number;
 }
 
+// Olimpiada types
+export interface Olimpiada {
+  id: number;
+  nombre: string;
+  slug: string;
+  edicion: string;
+  anio: number;
+  activo: boolean;
+}
+
+export interface IdNombreDTO {
+  id: number;
+  nombre: string;
+}
+
 // Torneo types
+export interface TorneoListDTO {
+  id: number;
+  nombre: string;
+  idDeporte: number;
+  deporteNombre: string;
+  idOlimpiada: number;
+  olimpiadaNombre: string;
+}
+
+export interface TorneoDetailDTO {
+  id: number;
+  nombre: string;
+  idDeporte: number;
+  deporteNombre: string;
+  idOlimpiada: number;
+  olimpiadaNombre: string;
+  reglamentoUrl?: string;
+}
+
+export interface TorneoCreateRequest {
+  nombre: string;
+  idDeporte: number;
+  idOlimpiada: number;
+}
+
+// Legacy support - mantener por compatibilidad
 export interface Torneo {
   id: number;
   nombre: string;
-  anio: number;
-  activo: boolean;
-  deporte: Deporte;
+  anio?: number;
+  activo?: boolean;
+  deporte?: Deporte;
+  id_deporte?: number;
+  deporte_nombre?: string;
+  idDeporte?: number;
+  deporteNombre?: string;
+  idOlimpiada?: number;
+  olimpiadaNombre?: string;
   reglamentoUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Equipo types
 export interface Equipo {
   id: number;
   nombre: string;
-  torneoId: number;
+  torneoId?: number;
+  torneoNombre?: string;
+  programaAcademico1: ProgramaAcademico;
+  programaAcademico2?: ProgramaAcademico;
+  capitanId?: number;
+  capitan?: Usuario;
+  integrantesCount: number;
   torneo?: Torneo;
+  grupoId?: number;
+  grupo?: Grupo;
   createdAt: string;
   updatedAt: string;
 }
@@ -134,8 +193,6 @@ export interface Partido {
   fecha: string;
   hora: string;
   observaciones?: string;
-  puntosEquipo1?: number;
-  puntosEquipo2?: number;
   resultadoEquipo1Id?: number;
   resultadoEquipo2Id?: number;
   torneo: Torneo;
@@ -144,10 +201,45 @@ export interface Partido {
   jornada?: Jornada;
   lugar: Lugar;
   arbitro?: Usuario;
-  equipo1?: Equipo;
-  equipo2?: Equipo;
+  equipoLocal?: {
+    id: number;
+    nombre: string;
+    puntos: number | null;
+  };
+  equipoVisitante?: {
+    id: number;
+    nombre: string;
+    puntos: number | null;
+  };
+  puntosLocal?: number | null;
+  puntosVisitante?: number | null;
   resultadoEquipo1?: Resultado;
   resultadoEquipo2?: Resultado;
+}
+
+export interface PartidoDetail {
+  id: number;
+  fecha: string;
+  hora: string;
+  idTorneo: number;
+  torneoNombre: string;
+  idLugar: number;
+  lugarNombre: string;
+  idFase?: number;
+  faseNombre?: string;
+  idGrupo?: number;
+  grupoNombre?: string;
+  idJornada?: number;
+  numeroJornada?: number;
+  idUsuarioArbitro?: number;
+  arbitroNombre?: string;
+  equipoLocalId?: number;
+  equipoLocalNombre?: string;
+  equipoLocalPuntos?: number | null;
+  equipoVisitanteId?: number;
+  equipoVisitanteNombre?: string;
+  equipoVisitantePuntos?: number | null;
+  observaciones?: string;
 }
 
 export interface PartidoCreateRequest {
@@ -180,7 +272,6 @@ export interface Evento {
   partidoId: number;
   tipoEventoId: number;
   usuarioId: number;
-  minuto?: number;
   observaciones?: string;
   tipoEvento: TipoEvento;
   usuario: Usuario;
@@ -190,7 +281,6 @@ export interface EventoCreateRequest {
   partidoId: number;
   tipoEventoId: number;
   usuarioId: number;
-  minuto?: number;
   observaciones?: string;
 }
 
@@ -206,6 +296,29 @@ export interface Posicion {
   gd: number;
   pts: number;
   fairPlay: number;
+}
+
+// Tabla posiciones DTO (backend shape)
+export interface EquipoPosicionDTO {
+  equipoId: number;
+  equipoNombre: string;
+  pj: number;
+  pg: number;
+  pe: number;
+  pp: number;
+  gf: number;
+  gc: number;
+  gd: number;
+  pts: number;
+  fairPlay: number;
+}
+
+export interface TablaPosiciones {
+  torneoId: number;
+  torneoNombre: string;
+  grupoId?: number;
+  grupoNombre?: string;
+  posiciones: EquipoPosicionDTO[];
 }
 
 // Pagination types

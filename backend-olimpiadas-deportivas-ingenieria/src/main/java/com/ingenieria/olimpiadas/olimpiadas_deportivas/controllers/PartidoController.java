@@ -11,7 +11,7 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.AsignarEquipo
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.MarcadorUpdateDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoCreateDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoDetailDTO;
-import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoListDTO;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoListViewDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.partido.PartidoUpdateDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.PartidoService;
 
@@ -23,7 +23,7 @@ public class PartidoController {
     public PartidoController(PartidoService svc) { this.svc = svc; }
 
     @GetMapping
-    public ResponseEntity<Page<PartidoListDTO>> listar(
+    public ResponseEntity<Page<PartidoListViewDTO>> listar(
             @RequestParam(required = false) Integer torneoId,
             @RequestParam(required = false) Integer faseId,
             @RequestParam(required = false) Integer grupoId,
@@ -43,12 +43,14 @@ public class PartidoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('Partidos_Editar')")
     public ResponseEntity<PartidoDetailDTO> actualizar(@PathVariable Integer id,
                                                        @Valid @RequestBody PartidoUpdateDTO req) {
         return ResponseEntity.ok(svc.actualizar(id, req));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('Partidos_Eliminar')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         svc.eliminar(id);
         return ResponseEntity.noContent().build();

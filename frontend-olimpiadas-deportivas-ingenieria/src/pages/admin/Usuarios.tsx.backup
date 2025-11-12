@@ -1,0 +1,278 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AppLayout } from '@/components/Layout/AppLayout';
+import { usuariosService } from '@/services/usuarios.service';
+import { useEndpointHealth } from '@/hooks/useEndpointHealth';
+import { DisabledOverlay } from '@/components/ui/disabled-overlay';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { Search, Loader2, Shield } from 'lucide-react';
+import { Usuario } from '@/types';
+
+interface PaginatedResponse<T> {
+  content: T[];
+  totalPages: number;
+}
+
+interface UpdateRolMutation {
+  id: number;
+  rol: string;
+}
+
+interface UpdateHabilitadoMutation {
+  id: number;
+  habilitado: boolean;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+export default function Usuarios() {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery<PaginatedResponse<Usuario>>({
+    queryKey: ['usuarios-admin', { search, page }],
+    queryFn: () => usuariosService.getUsuarios({ search, page, size: 10 }),
+  });
+
+  // Health check for admin endpoints. We use the same base path as the service.
+  const health = useEndpointHealth('/admin/usuarios');
+  const disabled = !health.available && !health.isLoading;
+
+  const updateRolMutation = useMutation<Usuario, ApiError, UpdateRolMutation>({
+    mutationFn: ({ id, rol }) => usuariosService.updateRol(id, rol),
+    onSuccess: () => {
+      toast.success('Rol actualizado exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['usuarios-admin'] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Error al actualizar el rol');
+    },
+  });
+
+  const updateHabilitadoMutation = useMutation<Usuario, ApiError, UpdateHabilitadoMutation>({
+    mutationFn: ({ id, habilitado }) => usuariosService.updateHabilitado(id, habilitado),
+    onSuccess: () => {
+      toast.success('Estado actualizado exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['usuarios-admin'] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Error al actualizar el estado');
+    },
+  });
+
+  const roles = ['Administrador', 'Árbitro', 'Jugador'];
+
+  // Render the page even if there was an error — show data if available and
+  // overlay the UI to prevent interactions when the admin endpoints are down.
+
+  const renderLoadingState = () => {
+    return React.createElement('div', { className: 'flex justify-center py-12' }, [
+      React.createElement(Loader2, { key: 'loader', className: 'h-8 w-8 animate-spin text-primary' })
+    ]);
+  };
+
+  const renderEmptyState = () => {
+    return React.createElement(Card, { key: 'empty-state' }, [
+      React.createElement(CardContent, { className: 'py-12 text-center' }, [
+        React.createElement(Shield, { key: 'shield', className: 'mx-auto h-12 w-12 text-muted-foreground' }),
+        React.createElement('p', { key: 'message', className: 'mt-4 text-muted-foreground' }, 'No se encontraron usuarios')
+      ])
+    ]);
+  };
+
+  const renderPagination = () => {
+    if (!data || data.totalPages <= 1) return null;
+    
+    return React.createElement('div', { className: 'flex justify-center gap-2' }, [
+      React.createElement(Button, {
+        key: 'prev',
+        variant: 'outline',
+        onClick: () => setPage((p) => Math.max(0, p - 1)),
+        disabled: page === 0
+      }, 'Anterior'),
+      React.createElement('span', {
+        key: 'info',
+        className: 'flex items-center px-4'
+      }, `Página ${page + 1} de ${data.totalPages}`),
+      React.createElement(Button, {
+        key: 'next',
+        variant: 'outline',
+        onClick: () => setPage((p) => p + 1),
+        disabled: page >= data.totalPages - 1
+      }, 'Siguiente')
+    ]);
+  };
+
+  const renderTableContent = () => {
+    if (!data?.content) return null;
+
+    return React.createElement('div', { className: 'overflow-x-auto' }, [
+      React.createElement(Table, { key: 'table' }, [
+        React.createElement(TableHeader, { key: 'header' }, [
+          React.createElement(TableRow, {}, [
+            React.createElement(TableHead, {}, 'Nombre'),
+            React.createElement(TableHead, {}, 'Correo'),
+            React.createElement(TableHead, {}, 'Rol'),
+            React.createElement(TableHead, {}, 'Estado'),
+            React.createElement(TableHead, {}, 'Acciones')
+          ])
+        ]),
+        React.createElement(TableBody, { key: 'body' }, 
+          data.content.map((usuario) => 
+            React.createElement(TableRow, { key: usuario.id }, [
+              React.createElement(TableCell, { className: 'font-medium' }, usuario.nombre),
+              React.createElement(TableCell, {}, usuario.correo),
+              React.createElement(TableCell, {}, 
+                React.createElement(Select, {
+                  value: usuario.rol,
+                  onValueChange: (value) => 
+                    !disabled && updateRolMutation.mutate({ id: usuario.id, rol: value })
+                }, [
+                  React.createElement(SelectTrigger, { className: 'w-[150px]' }, 
+                    React.createElement(SelectValue, {})
+                  ),
+                  React.createElement(SelectContent, {}, 
+                    roles.map((rol) =>
+                      React.createElement(SelectItem, { key: rol, value: rol }, rol)
+                    )
+                  )
+                ])
+              ),
+              React.createElement(TableCell, {}, 
+                usuario.habilitado
+                  ? React.createElement(Badge, { className: 'bg-success' }, 'Habilitado')
+                  : React.createElement(Badge, { variant: 'destructive' }, 'Deshabilitado')
+              ),
+              React.createElement(TableCell, {}, 
+                React.createElement(AlertDialog, {}, [
+                  React.createElement(AlertDialogTrigger, { asChild: true }, 
+                    React.createElement(Button, {
+                      variant: 'outline',
+                      size: 'sm',
+                      disabled: disabled
+                    }, usuario.habilitado ? 'Deshabilitar' : 'Habilitar')
+                  ),
+                  React.createElement(AlertDialogContent, {}, [
+                    React.createElement(AlertDialogHeader, {}, [
+                      React.createElement(AlertDialogTitle, {}, 
+                        `${usuario.habilitado ? 'Deshabilitar' : 'Habilitar'} Usuario`
+                      ),
+                      React.createElement(AlertDialogDescription, {}, 
+                        `¿Estás seguro de que deseas ${usuario.habilitado ? 'deshabilitar' : 'habilitar'} a ${usuario.nombre}?`
+                      )
+                    ]),
+                    React.createElement(AlertDialogFooter, {}, [
+                      React.createElement(AlertDialogCancel, {}, 'Cancelar'),
+                      React.createElement(AlertDialogAction, {
+                        onClick: () =>
+                          !disabled &&
+                          updateHabilitadoMutation.mutate({
+                            id: usuario.id,
+                            habilitado: !usuario.habilitado,
+                          })
+                      }, 'Confirmar')
+                    ])
+                  ])
+                ])
+              )
+            ])
+          )
+        )
+      ])
+    ]);
+  };
+
+  const renderContent = () => {
+    const children = [
+      disabled && React.createElement(Card, { key: 'disabled-card' }, [
+        React.createElement(CardContent, { className: 'py-4 text-center' }, [
+          React.createElement(Shield, { key: 'shield', className: 'mx-auto h-8 w-8 text-muted-foreground' }),
+          React.createElement('p', { key: 'msg', className: 'mt-2 text-muted-foreground' }, 
+            'Admin endpoints no disponibles. La funcionalidad está deshabilitada.'
+          )
+        ])
+      ]),
+      React.createElement('div', { key: 'header' }, [
+        React.createElement('h1', { className: 'text-3xl font-bold tracking-tight' }, 'Gestión de Usuarios'),
+        React.createElement('p', { className: 'text-muted-foreground' }, 'Administra roles y permisos de usuarios')
+      ]),
+      React.createElement(Card, { key: 'search-card' }, [
+        React.createElement(CardHeader, { key: 'header' }, [
+          React.createElement(CardTitle, { className: 'text-lg flex items-center gap-2' }, [
+            React.createElement(Search, { key: 'search-icon', className: 'h-5 w-5' }),
+            'Buscar Usuarios'
+          ])
+        ]),
+        React.createElement(CardContent, { key: 'content' }, [
+          React.createElement('div', { className: 'relative' }, [
+            React.createElement(Input, {
+              key: 'input',
+              placeholder: 'Buscar por nombre o correo...',
+              value: search,
+              onChange: (e: { target: { value: string } }) => setSearch(e.target.value),
+              disabled: disabled
+            }),
+            disabled && React.createElement(DisabledOverlay, {
+              key: 'overlay',
+              message: 'Admin endpoints no disponibles. Funcionalidad deshabilitada.'
+            })
+          ])
+        ])
+      ]),
+      isLoading 
+        ? renderLoadingState()
+        : React.createElement(Card, { key: 'users-table' }, [
+            React.createElement(CardHeader, { key: 'header' }, [
+              React.createElement(CardTitle, {}, 'Usuarios'),
+              React.createElement(CardDescription, {}, 'Lista de usuarios registrados en el sistema')
+            ]),
+            React.createElement(CardContent, { key: 'content' }, [
+              renderTableContent()
+            ])
+          ]),
+      data?.content.length === 0 && renderEmptyState(),
+      renderPagination()
+    ].filter(Boolean);
+
+    return React.createElement('div', { className: 'space-y-6' }, children);
+  };
+
+  return React.createElement(AppLayout, {}, renderContent());
+}

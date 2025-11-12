@@ -11,6 +11,8 @@ public interface EquiposPorPartidoRepository extends JpaRepository<EquiposPorPar
 
     List<EquiposPorPartido> findByPartidoId(Integer partidoId);
 
+    List<EquiposPorPartido> findByPartidoIdOrderByIdAsc(Integer partidoId);
+
     @Query("""
            select epp from EquiposPorPartido epp
            where epp.partido.id = :partidoId and epp.equipo.id = :equipoId

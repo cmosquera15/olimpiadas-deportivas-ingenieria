@@ -29,21 +29,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String requestUri = request.getRequestURI();
+        String method = request.getMethod();
+        System.out.println("🔍 JWT Filter: " + method + " " + requestUri);
+
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = resolveToken(header);
 
+        System.out.println("🔍 Token present: " + (token != null));
+
         if (token != null && jwtTokenProvider.validateToken(token)) {
+            System.out.println("🔍 Token valid, setting authentication");
             String email = jwtTokenProvider.getEmail(token);
             List<SimpleGrantedAuthority> authorities = jwtTokenProvider.getAuthorities(token)
                     .stream()
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
+            System.out.println("🔍 User: " + email + ", Authorities: " + authorities);
+
             AbstractAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(email, null, authorities);
 
             org.springframework.security.core.context.SecurityContextHolder
                     .getContext().setAuthentication(auth);
+        } else if (token != null) {
+            System.out.println("🔍 Token invalid or expired");
         }
 
         filterChain.doFilter(request, response);
@@ -51,7 +62,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private String resolveToken(String header) {
         if (!StringUtils.hasText(header)) return null;
-        if (!header.startsWith("Bearer ")) return null;
-        return header.substring(7);
+        String h = header.trim();
+        if ("undefined".equalsIgnoreCase(h) || "null".equalsIgnoreCase(h)) return null;
+        if (!h.startsWith("Bearer ")) return null;
+        String raw = h.substring(7).trim();
+        if (!StringUtils.hasText(raw)) return null;
+        if ("undefined".equalsIgnoreCase(raw) || "null".equalsIgnoreCase(raw)) return null;
+        return raw;
     }
 }

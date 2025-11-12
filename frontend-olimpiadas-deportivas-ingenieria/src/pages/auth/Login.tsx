@@ -1,45 +1,62 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
 import { useMutation } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/store/useAuth';
 import { toast } from 'sonner';
 import { Trophy } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import axios from 'axios';
+import { Usuario } from '@/types';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setAuth, isAuthenticated } = useAuth();
+  const { setAuth, isAuthenticated, profileComplete  } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(profileComplete ? '/dashboard' : '/auth/completar-perfil');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, profileComplete, navigate]);
 
   const loginMutation = useMutation({
     mutationFn: authService.googleLogin,
     onSuccess: (data) => {
+      const userLike: Partial<Usuario> = {
+        nombre: data.nombre ?? null,
+        correo: data.correo ?? null,
+        fotoUrl: data.fotoUrl ?? null,
+      };
+
+      setAuth(data.token, userLike, data.completo);
+
       if (!data.completo) {
-        setAuth(data.jwt, data.usuario!);
         navigate('/auth/completar-perfil');
       } else {
-        setAuth(data.jwt, data.usuario!);
         toast.success('Inicio de sesión exitoso');
         navigate('/dashboard');
       }
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al iniciar sesión');
+
+    onError: (error: unknown) => {
+      let description = 'Error al iniciar sesión';
+      if (axios.isAxiosError(error)) {
+        description = (error.response?.data as { message?: string })?.message || error.message || description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+      toast.error(description);
     },
   });
 
-  const handleGoogleSuccess = (credentialResponse: any) => {
-    if (credentialResponse.credential) {
-      loginMutation.mutate(credentialResponse.credential);
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse | null) => {
+    const credential = credentialResponse?.credential;
+    if (credential) {
+      loginMutation.mutate(credential);
     }
   };
 

@@ -101,7 +101,7 @@ public class AuthService {
                 throw new BadRequestException("Usuario deshabilitado. Contacta al administrador.");
             }
 
-            return new AuthDTO(jwt, usuario.getNombre(), usuario.getCorreo(), completo, usuario.getFotoUrl());
+            return new AuthDTO(jwt, usuario.getId(), usuario.getNombre(), usuario.getCorreo(), completo, usuario.getFotoUrl());
 
         } catch (BadRequestException e) {
             throw e;

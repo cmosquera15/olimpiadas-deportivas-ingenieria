@@ -15,6 +15,8 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.EquipoService;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.services.UsuariosPorEquipoService;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.usuario.CandidatoJugadorDTO;
 
 @RestController
 @RequestMapping("/api/equipos")
@@ -70,6 +72,16 @@ public class EquipoController {
                                                            @RequestParam Integer usuarioId,
                                                            @RequestParam Integer torneoId) {
         return ResponseEntity.ok(plantillaService.agregarJugador(equipoId, usuarioId, torneoId));
+    }
+
+    @GetMapping("/{equipoId}/candidatos")
+    public ResponseEntity<Page<CandidatoJugadorDTO>> candidatos(
+            @PathVariable Integer equipoId,
+            @RequestParam Integer torneoId,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
+        return ResponseEntity.ok(plantillaService.candidatos(equipoId, torneoId, q, page, size));
     }
 
     @DeleteMapping("/plantilla/{usuariosPorEquipoId}")

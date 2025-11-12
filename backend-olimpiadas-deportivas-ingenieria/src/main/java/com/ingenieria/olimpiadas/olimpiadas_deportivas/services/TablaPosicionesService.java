@@ -10,6 +10,7 @@ import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.equipo.EquipoPosicion
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.dto.torneo.TablaPosicionesDTO;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.exceptions.NotFoundException;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.catalogo.Resultado;
+import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Equipo;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.EquiposPorPartido;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Partido;
 import com.ingenieria.olimpiadas.olimpiadas_deportivas.models.torneo.Torneo;
@@ -25,17 +26,20 @@ public class TablaPosicionesService {
     private final PartidoRepository partidoRepository;
     private final EquiposPorPartidoRepository eppRepository;
     private final EventoRepository eventoRepository;
+    private final EquipoRepository equipoRepository;
 
     public TablaPosicionesService(TorneoRepository torneoRepository,
                                   GrupoRepository grupoRepository,
                                   PartidoRepository partidoRepository,
                                   EquiposPorPartidoRepository eppRepository,
-                                  EventoRepository eventoRepository) {
+                                  EventoRepository eventoRepository,
+                                  EquipoRepository equipoRepository) {
         this.torneoRepository = torneoRepository;
         this.grupoRepository = grupoRepository;
         this.partidoRepository = partidoRepository;
         this.eppRepository = eppRepository;
         this.eventoRepository = eventoRepository;
+        this.equipoRepository = equipoRepository;
     }
 
     public TablaPosicionesDTO calcular(Integer torneoId, Integer grupoIdOrNull) {
@@ -45,6 +49,14 @@ public class TablaPosicionesService {
         var grupo = (grupoIdOrNull == null) ? null
                 : grupoRepository.findById(grupoIdOrNull)
                 .orElseThrow(() -> new NotFoundException("Grupo no encontrado"));
+
+        // Initialize ALL teams in the torneo/grupo with zero stats
+        List<Equipo> allEquipos;
+        if (grupo != null) {
+            allEquipos = equipoRepository.findByGrupo(grupo.getId());
+        } else {
+            allEquipos = equipoRepository.findByTorneoIdOrderByNombreAsc(torneoId);
+        }
 
         List<Partido> partidos = partidoRepository.findByTorneoOrdered(torneoId);
         if (grupo != null) {
@@ -68,6 +80,12 @@ public class TablaPosicionesService {
 
         Map<Integer, Stats> map = new HashMap<>();
 
+        // Pre-populate map with all teams (zero stats)
+        for (Equipo equipo : allEquipos) {
+            System.out.println("🔍 Pre-populating team: ID=" + equipo.getId() + ", Name=" + equipo.getNombre());
+            map.put(equipo.getId(), Stats.of(equipo.getId(), equipo.getNombre()));
+        }
+
         String depName = Optional.ofNullable(torneo.getDeporte())
                 .map(d -> d.getNombre() == null ? "" : d.getNombre().toUpperCase())
                 .orElse("");
@@ -86,6 +104,10 @@ public class TablaPosicionesService {
             var a = epps.get(0);
             var b = epps.get(1);
 
+            // Only count matches that have been played (both teams have puntos AND resultado)
+            boolean matchPlayed = a.getPuntos() != null && a.getResultado() != null
+                    && b.getPuntos() != null && b.getResultado() != null;
+
             Integer aId = a.getEquipo().getId();
             Integer bId = b.getEquipo().getId();
             map.putIfAbsent(aId, Stats.of(aId, a.getEquipo().getNombre()));
@@ -93,8 +115,13 @@ public class TablaPosicionesService {
             var sa = map.get(aId);
             var sb = map.get(bId);
 
-            int pa = Optional.ofNullable(a.getPuntos()).orElse(0);
-            int pb = Optional.ofNullable(b.getPuntos()).orElse(0);
+            if (!matchPlayed) {
+                // Match hasn't been played yet, skip stats calculation
+                continue;
+            }
+
+            int pa = a.getPuntos();
+            int pb = b.getPuntos();
 
             sa.pj.incrementAndGet();
             sb.pj.incrementAndGet();
@@ -157,11 +184,13 @@ public class TablaPosicionesService {
                     .sumPuntosNegativosEquipoEnFase(torneoId, "Grupo", s.equipoId);
             double fair = s.pj.get() > 0 ? (totalNeg * 1.0 / s.pj.get()) : 0.0;
 
-            return new EquipoPosicionDTO(
+            EquipoPosicionDTO dto = new EquipoPosicionDTO(
                     s.equipoId, s.nombre,
                     s.pj.get(), s.pg.get(), s.pe.get(), s.pp.get(),
                     s.gf.get(), s.gc.get(), gd, s.pts.get(), fair
             );
+            System.out.println("🔍 Creating DTO for team: ID=" + dto.equipoId() + ", Name=" + dto.equipoNombre());
+            return dto;
         }).collect(Collectors.toList());
 
         posiciones.sort(Comparator.comparing(EquipoPosicionDTO::pts).reversed());
