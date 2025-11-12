@@ -31,7 +31,9 @@ export default function ListadoTorneos() {
   const { data, isLoading } = useQuery({
     queryKey: ['torneos', { olimpiadaId: selectedOlimpiada?.id, deporteId, page }],
     queryFn: () => {
-      console.log('🔍 Torneos filter:', { olimpiadaId: selectedOlimpiada?.id, deporteId, page });
+      if (import.meta.env.DEV) {
+        console.log('🔍 Torneos filter:', { olimpiadaId: selectedOlimpiada?.id, deporteId, page });
+      }
       return torneosService.getTorneos({ 
         olimpiadaId: selectedOlimpiada?.id, 
         deporteId, 

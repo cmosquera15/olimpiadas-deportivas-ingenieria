@@ -40,8 +40,10 @@ export default function TablaPosiciones() {
     queryFn: async () => {
       if (!torneoId) throw new Error('Torneo ID is required');
       const result = await posicionesService.getTabla(torneoId, grupoId);
-      console.log('🔍 Tabla data received:', result);
-      console.log('🔍 First posicion:', result.posiciones?.[0]);
+      if (import.meta.env.DEV) {
+        console.log('🔍 Tabla data received:', result);
+        console.log('🔍 First posicion:', result.posiciones?.[0]);
+      }
       return result;
     },
     enabled: !!torneoId && fase === 'grupos',

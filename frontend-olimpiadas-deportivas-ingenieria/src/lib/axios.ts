@@ -15,7 +15,9 @@ axiosInstance.interceptors.request.use(
     const rawUrl = (config.url ?? '').toLowerCase();
     const method = (config.method ?? 'get').toLowerCase();
 
-    console.log('🔍 Axios Request:', { method, url: config.url, hasToken: !!token });
+    if (import.meta.env.DEV) {
+      console.log('🔍 Axios Request:', { method, url: config.url, hasToken: !!token });
+    }
 
     const isGoogleLogin =
       rawUrl === '/auth/google-login' ||
@@ -36,7 +38,9 @@ axiosInstance.interceptors.request.use(
       rawUrl.startsWith('/eps')      || rawUrl.startsWith('/api/eps')      || rawUrl.includes('/eps?')
     );
 
-    console.log('🔍 Auth decision:', { isPublicGet, isGoogleLogin, willSendToken: !isPublicGet && !isGoogleLogin && !!token });
+    if (import.meta.env.DEV) {
+      console.log('🔍 Auth decision:', { isPublicGet, isGoogleLogin, willSendToken: !isPublicGet && !isGoogleLogin && !!token });
+    }
 
     // Helper to remove Authorization for both AxiosHeaders and plain object headers (no any)
     const removeAuthHeader = () => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getAuthorities, getUserRole, getToken } from '@/lib/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,25 +40,21 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   }, [isDark]);
 
   React.useEffect(() => {
-    if (user) {
+    if (import.meta.env.DEV && user) {
       console.log('🔍 User data in AppLayout:', {
         nombre: user.nombre,
         correo: user.correo,
         fotoUrl: user.fotoUrl,
         hasFoto: !!user.fotoUrl,
-        fotoUrlLength: user.fotoUrl?.length,
-        fotoUrlType: typeof user.fotoUrl,
       });
-      
-      // Test if we can load the image directly
-      if (user.fotoUrl) {
-        const testImg = new Image();
-        testImg.crossOrigin = 'anonymous';
-        testImg.referrerPolicy = 'no-referrer';
-        testImg.onload = () => console.log('✅ Image is accessible:', user.fotoUrl);
-        testImg.onerror = (e) => console.error('❌ Image failed to load:', user.fotoUrl, e);
-        testImg.src = user.fotoUrl;
-      }
+
+      const token = getToken();
+      const authorities = getAuthorities();
+      console.log('🔍 Auth summary:', {
+        tokenPresent: !!token,
+        authoritiesCount: authorities.length,
+        role: getUserRole(),
+      });
     }
   }, [user]);
 
@@ -154,8 +151,8 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                           alt={displayName || 'User'}
                           referrerPolicy="no-referrer"
                           crossOrigin="anonymous"
-                          onLoad={() => console.log('✅ Avatar image loaded successfully')}
-                          onError={(e) => console.error('❌ Avatar image failed to load:', e)}
+                          onLoad={() => import.meta.env.DEV && console.log('✅ Avatar image loaded successfully')}
+                          onError={(e) => import.meta.env.DEV && console.error('❌ Avatar image failed to load:', e)}
                         />
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {getInitials(displayName)}

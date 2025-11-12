@@ -78,7 +78,9 @@ export default function Usuarios() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<UsuarioCreateRequest>({ nombre: '', correo: '', rolNombre: 'JUGADOR' });
 
-  console.log('🔍 Usuarios data:', data);
+  if (import.meta.env.DEV) {
+    console.log('🔍 Usuarios data:', data);
+  }
 
   const updateRolMutation = useMutation<UsuarioListDTO, ApiError, UpdateRolMutation>({
     mutationFn: ({ id, rol }) => usuariosService.updateRol(id, rol),

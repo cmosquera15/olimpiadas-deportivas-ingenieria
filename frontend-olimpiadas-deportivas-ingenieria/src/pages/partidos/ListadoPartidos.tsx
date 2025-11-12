@@ -33,7 +33,9 @@ export default function ListadoPartidos() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['partidos', { faseId, page }],
     queryFn: () => {
-      console.log('🔍 Fetching partidos with:', { faseId, page, size: 10 });
+      if (import.meta.env.DEV) {
+        console.log('🔍 Fetching partidos with:', { faseId, page, size: 10 });
+      }
       return partidosService.getPartidos({ faseId, page, size: 10 });
     },
   });

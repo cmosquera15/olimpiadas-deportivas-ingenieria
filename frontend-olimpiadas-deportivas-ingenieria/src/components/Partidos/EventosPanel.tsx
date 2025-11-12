@@ -67,15 +67,17 @@ export function EventosPanel({ partido }: EventosPanelProps) {
     staleTime: 5 * 60 * 1000,
   });
 
-  console.log('🔍 EventosPanel debug:', {
-    partidoIdTorneo: partidoTorneoId,
-    torneo,
-    loadingTorneo,
-    idDeporte: torneo?.idDeporte,
-    tiposEvento,
-    loadingTiposEvento,
-    tiposEventoCount: tiposEvento?.length
-  });
+  if (import.meta.env.DEV) {
+    console.log('🔍 EventosPanel debug:', {
+      partidoIdTorneo: partidoTorneoId,
+      torneo,
+      loadingTorneo,
+      idDeporte: torneo?.idDeporte,
+      tiposEvento,
+      loadingTiposEvento,
+      tiposEventoCount: tiposEvento?.length
+    });
+  }
 
   const equipoIdActual = equipoSeleccionado === '1' ? partido.equipoLocalId : partido.equipoVisitanteId;
 

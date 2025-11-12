@@ -6,9 +6,11 @@ export const posicionesService = {
     const { data } = await axiosInstance.get<TablaPosiciones>('/posiciones', {
       params: { torneoId, grupoId },
     });
-    console.log('🔍 RAW API Response:', data);
-    console.log('🔍 Posiciones array:', data.posiciones);
-    console.log('🔍 First team name:', data.posiciones?.[0]?.equipoNombre);
+    if (import.meta.env.DEV) {
+      console.log('🔍 RAW API Response:', data);
+      console.log('🔍 Posiciones array:', data.posiciones);
+      console.log('🔍 First team name:', data.posiciones?.[0]?.equipoNombre);
+    }
     return data;
   },
 };
