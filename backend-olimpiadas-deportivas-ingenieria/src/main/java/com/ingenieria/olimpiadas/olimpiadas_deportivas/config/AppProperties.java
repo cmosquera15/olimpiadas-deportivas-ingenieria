@@ -3,6 +3,7 @@ package com.ingenieria.olimpiadas.olimpiadas_deportivas.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -18,6 +19,11 @@ public class AppProperties {
     public Jwt getJwt() { return jwt; }
     public Cors getCors() { return cors; }
 
+    public String getReglamentoUrl() { return reglamentoUrl; }
+    public void setReglamentoUrl(String reglamentoUrl) { this.reglamentoUrl = reglamentoUrl; }
+
+    // ---------- Subprops ----------
+
     public static class Google {
         private String clientId;
 
@@ -27,7 +33,7 @@ public class AppProperties {
 
     public static class Jwt {
         private String secretB64;
-        private long expirationMs = 1800000L;
+        private long expirationMs = 1_800_000L; // 30 min
         private String issuer = "olimpiadas-ingenieria";
 
         public String getSecretB64() { return secretB64; }
@@ -41,29 +47,63 @@ public class AppProperties {
     }
 
     public static class Cors {
-        private List<String> allowedOrigins = List.of("http://localhost:5173", "https://olimpiadas.ingenieria.com", "https://olimpiadasingenieria.com");
-        private List<String> allowedMethods = List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS");
-        private List<String> allowedHeaders = List.of("Authorization", "Content-Type", "Accept");
+        /** Orígenes exactos permitidos (útiles para prod/local). */
+        private List<String> allowedOrigins = new ArrayList<>(List.of(
+            "http://localhost:5173",
+            "https://olimpiadas.ingenieria.com",
+            "https://olimpiadasingenieria.com"
+        ));
+
+        /**
+         * Patrones de origen permitidos (útil para previews de Vercel: https://*.vercel.app).
+         * Si esta lista NO está vacía, el CorsConfig usará setAllowedOriginPatterns().
+         */
+        private List<String> allowedOriginPatterns = new ArrayList<>(List.of(
+            "https://*.vercel.app"
+        ));
+
+        private List<String> allowedMethods = new ArrayList<>(List.of(
+            "GET","POST","PUT","PATCH","DELETE","OPTIONS"
+        ));
+
+        /** Usa "*" por simplicidad; si quieres, restrínge a ["Authorization","Content-Type","Accept"]. */
+        private List<String> allowedHeaders = new ArrayList<>(List.of(
+            "*"
+        ));
+
         private boolean allowCredentials = true;
-        private List<String> exposedHeaders = List.of();
+
+        /** Headers expuestos al cliente (vacío por defecto). */
+        private List<String> exposedHeaders = new ArrayList<>();
+
+        // Getters/Setters
 
         public List<String> getAllowedOrigins() { return allowedOrigins; }
-        public void setAllowedOrigins(List<String> allowedOrigins) { this.allowedOrigins = allowedOrigins; }
+        public void setAllowedOrigins(List<String> allowedOrigins) {
+            this.allowedOrigins = (allowedOrigins != null) ? new ArrayList<>(allowedOrigins) : new ArrayList<>();
+        }
+
+        public List<String> getAllowedOriginPatterns() { return allowedOriginPatterns; }
+        public void setAllowedOriginPatterns(List<String> allowedOriginPatterns) {
+            this.allowedOriginPatterns = (allowedOriginPatterns != null) ? new ArrayList<>(allowedOriginPatterns) : new ArrayList<>();
+        }
 
         public List<String> getAllowedMethods() { return allowedMethods; }
-        public void setAllowedMethods(List<String> allowedMethods) { this.allowedMethods = allowedMethods; }
+        public void setAllowedMethods(List<String> allowedMethods) {
+            this.allowedMethods = (allowedMethods != null) ? new ArrayList<>(allowedMethods) : new ArrayList<>();
+        }
 
         public List<String> getAllowedHeaders() { return allowedHeaders; }
-        public void setAllowedHeaders(List<String> allowedHeaders) { this.allowedHeaders = allowedHeaders; }
+        public void setAllowedHeaders(List<String> allowedHeaders) {
+            this.allowedHeaders = (allowedHeaders != null) ? new ArrayList<>(allowedHeaders) : new ArrayList<>();
+        }
 
         public boolean isAllowCredentials() { return allowCredentials; }
         public void setAllowCredentials(boolean allowCredentials) { this.allowCredentials = allowCredentials; }
 
         public List<String> getExposedHeaders() { return exposedHeaders; }
-        public void setExposedHeaders(List<String> exposedHeaders) { this.exposedHeaders = exposedHeaders; }
+        public void setExposedHeaders(List<String> exposedHeaders) {
+            this.exposedHeaders = (exposedHeaders != null) ? new ArrayList<>(exposedHeaders) : new ArrayList<>();
+        }
     }
-
-
-    public String getReglamentoUrl() { return reglamentoUrl; }
-    public void setReglamentoUrl(String reglamentoUrl) { this.reglamentoUrl = reglamentoUrl; }
 }
